@@ -4,8 +4,8 @@ function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input)
 %  as jpg
 
 %  Create directory to hold all images in montage
-mkdir(dir_input,strcat('/montage/',type,'_',mp.t_number.String,'/'));
-gen_file_location = strcat(dir_input,'/montage/',type,'_',mp.t_number.String,'/');
+mkdir(dir_input,strcat('/montage/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'/'));
+gen_file_location = strcat(dir_input,'/montage/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'/');
 
 for i = 6:6:150
     anat.slice_z = i;
@@ -27,7 +27,7 @@ mymontage = montage(fileNames, 'Size', [5 5]);
 mkdir(dir_input,'/clinician_final/');
 
 %  Write the montage to the clinician file
-imwrite(mymontage.CData,strcat(dir_input,'/clinician_final/',subj.name,'_',type,'_',mp.t_number.String,'_final_montage.jpg'));
+imwrite(mymontage.CData,strcat(dir_input,'/clinician_final/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'_final_montage.jpg'));
 
 %  Display the montage in the montage window
 display('Montage saved');
