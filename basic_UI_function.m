@@ -1,10 +1,10 @@
-%  Template interface for ChanR16 - now work to generalize for any subject
+%  Template interface (generalized for several subjects)
 
 clear all;
 close all;
 
 addpath('/data/wayne/matlab/NIFTI');
-subj.name = 'ChanR16'; % This should be user driven or pulled from run_python
+subj.name = 'Dunstan15'; % This should be user driven or pulled from run_python
 dir_input = strcat('/data/projects/CVR/GUI_subjects/',subj.name);
 subj.date = '160314';
 

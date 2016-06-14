@@ -17,7 +17,7 @@ subject_names = dir(directory);
 sp.f = figure('Name', 'Process Subject',...
                     'Visible','on',...
                     'Position',[50,800,300,450]);
-
+    
 %  Descriptive text for the select subject dropdown menu                
 sp.text(1) = uicontrol('Style','text',...
                 'units','normalized',...
@@ -32,21 +32,6 @@ sp.menu(1) = uicontrol('Style','popupmenu',...
                 'String',sp.STR,...
                 'Position',[50,325,200,60]);
              
-% %  Descriptive text for breath hold selection
-% sp.text(2) = uicontrol('Style','text',...
-%                        'units','normalized',...
-%                        'Position',[0.35,0.55,0.3,0.2],...
-%                        'String','Select breath hold');
-%                    
-% %  Popupmenu to select breath hold
-% sp.STR2 = {'','BH1','BH2','HV'};
-% 
-% sp.menu(2) = uicontrol('Style','popupmenu',...
-%                        'Visible','on',...
-%                        'String',sp.STR2,...
-%                        'Enable','off',...
-%                        'Position',[50,225,200,60]);
-
 %  Push button to begin processing subjectcd .
 sp.CVRb = uicontrol('Style','togglebutton',...
                 'Visible','on',...
@@ -69,6 +54,7 @@ mp.quit = uicontrol('Style','togglebutton',...
                     'Value',0,'Position',[110,80,80,60],...
                     'callback',@quit_program);              
 
+%  MAKE DATA DRIVEN 
 waitfor(sp.menu(1),'Value');               
 if(sp.menu(1).Value == 3)
     subj.name = 'Bisch15';
@@ -77,16 +63,6 @@ elseif(sp.menu(1).Value == 4)
 elseif(sp.menu(1).Value == 5)
     subj.name = 'Dunstan15';
 end
-
-% set(sp.menu(2),'Enable','on');
-% waitfor(sp.menu(2),'Value');
-% if(sp.menu(2).Value == 2)
-%     subj.breathhold = 'BH1';
-% elseif(sp.menu(2).Value == 3)
-%     subj.breathhold = 'BH2';
-% elseif(sp.menu(2).Value == 4)
-%     subj.breathhold = 'HV';
-% end
 
 dir_input = strcat(directory,subj.name,'/');
 cd(dir_input);
@@ -136,9 +112,9 @@ for i=1:3 % First for loop goes through the three temporal filtering methods
         if(stimulus == 2) % If stimulus selected is pf then have to transform standard data to the subject space to create 1D pf stimfile
             for bh_pf=1:2
                 if bh_pf == 1
-                    subj.breathhold = 'BH1'
+                    subj.breathhold = 'BH1';
                 elseif bh_pf == 2
-                    subj.breathhold = 'BH2'
+                    subj.breathhold = 'BH2';
                 end
                 s1 = 'flirt -in standard_files/avg152T1_brain.nii.gz -ref data/processed_';
                 s2 = destination_name_R_P;
@@ -221,6 +197,8 @@ for i=1:3 % First for loop goes through the three temporal filtering methods
             [temp.x,temp.y,temp.z] = size(temp.img);
 
             %  Save the fifth bucket of the functional data (coeff bucket)
+            %  Changing to try and see if can save the sixth bucket of the
+            %  functional data (t_stat bucket)
             voxel_size = [temp.hdr.dime.pixdim(2) temp.hdr.dime.pixdim(3) temp.hdr.dime.pixdim(4)];
             temp.brain_bucket_5 = double(squeeze(temp.img(:,:,:,:,5)));
             nii = make_nii(temp.brain_bucket_5,voxel_size);
@@ -238,11 +216,11 @@ for i=1:3 % First for loop goes through the three temporal filtering methods
             bucketfive2anat = strcat(str8,str2,str9,str4,str5,str2,str10,str2,str11);
             command = bucketfive2anat;
             status = system(command);
-            display('All files saved and glm bucket ready for CVR map use');
         end
     end
 end
 
+display('ALL DONE');
 %  Allow the user to press the Look at Subject button to start running the
 %  display UI program 
 set(sp.look,'Enable','on');
