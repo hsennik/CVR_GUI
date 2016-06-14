@@ -4,7 +4,7 @@ clear all;
 close all;
 
 addpath('/data/wayne/matlab/NIFTI');
-subj.name = 'Dunstan15'; % This should be user driven or pulled from run_python
+subj.name = 'ChanR16'; % This should be user driven or pulled from run_python
 dir_input = strcat('/data/projects/CVR/GUI_subjects/',subj.name);
 subj.date = '160314';
 
@@ -18,28 +18,35 @@ mp.f = figure('Name', 'CVR Menu',...
                     'Visible','on',...
                     'Position',[50,800,300,700]);
 
-%  Descriptive text for the temporal filtering dropdown menu                
+% %  Descriptive text for the temporal filtering dropdown menu                
+% mp.text(1) = uicontrol('Style','text',...
+%                 'units','normalized',...
+%                 'Position',[0.15,0.85,0.6,0.1],...
+%                 'String','Select temporal filtering');
+
+%  Descriptive text for the processing dropdown menu                
 mp.text(1) = uicontrol('Style','text',...
                 'units','normalized',...
                 'Position',[0.15,0.85,0.6,0.1],...
-                'String','Select temporal filtering');
+                'String','Apply pre-processing?');
 
 %  Descriptive text for the stimfile selection dropdown menu                        
 mp.text(2) = uicontrol('Style','text',...
                     'units','normalized',...
-                    'Position',[0.15,0.70,0.6,0.1],...
+                    'Position',[0.15,0.72,0.6,0.1],...
                     'String','Select stimfile');
                 
 %  Descriptive text for the breathhold selection dropdown menu
 mp.text(3) = uicontrol('Style','text',...
                        'units','normalized',...
-                       'Position',[0.15,0.55,0.6,0.1],...
+                       'Position',[0.15,0.59,0.6,0.1],...
                        'String','Select breath hold');
         
 %  Popupmenus to select temporal filtering and stimfile to generate map
 
 mp.STR = {'','Boxcar','Posterior fossa'}; % String for stimfile popup
-mp.STR2 = {'','none','mpe','MD'}; % String for temporal filtering popup
+% mp.STR2 = {'','none','mpe','MD'}; % String for temporal filtering popup
+mp.STR2 = {'','yes','no'}; % String for pre-processing popup
 mp.STR3 = {'','BH1','BH2'}; % String for breathhold popup
 
 mp.menu(2) = uicontrol('Style','popupmenu',...
@@ -51,13 +58,13 @@ mp.menu(1) = uicontrol('Style','popupmenu',...
                         'Visible','on',...
                         'Enable','off',...
                         'String',mp.STR,...
-                        'Position',[35,465,200,60]);
+                        'Position',[35,485,200,60]);
 
 mp.menu(3) = uicontrol('Style','popupmenu',...
                        'Visible','on',...
                        'Enable','off',...
                        'String',mp.STR3,...
-                       'Position',[35,355,200,60]);
+                       'Position',[35,395,200,60]);
 
 %  Toggle button to overlay CVR map
 mp.CVRb = uicontrol('Style','togglebutton',...
@@ -107,16 +114,26 @@ mp.t = uicontrol('Style','slider',...
 %  Step 2 - the anatomical image is loaded from recon and slices are
 %  displayed to the user
 
-waitfor(mp.menu(2),'Value'); % Wait for the user to select a filtering method 
+% waitfor(mp.menu(2),'Value'); % Wait for the user to select a filtering method 
+% 
+% if (mp.menu(2).Value == 2)
+%     s = strcat('/data/recon_none/',subj.name,'/',subj.name,'_anat_brain.nii');
+%     fname_anat = s;
+% elseif(mp.menu(2).Value == 3)
+%     s = strcat('/data/recon_mpe/',subj.name,'/',subj.name,'_anat_brain.nii');
+%     fname_anat = s;
+% elseif(mp.menu(2).Value == 4)
+%     s = strcat('/data/recon_MD/',subj.name,'/',subj.name,'_anat_brain.nii');
+%     fname_anat = s;
+% end
 
-if (mp.menu(2).Value == 2)
-    s = strcat('/data/recon_none/',subj.name,'/',subj.name,'_anat_brain.nii');
+waitfor(mp.menu(2),'Value'); % Wait for user to select whether they want processing or not 
+
+if(mp.menu(2).Value == 2)
+    s = strcat('data/recon_none/',subj.name,'/',subj.name,'_anat_brain.nii');
     fname_anat = s;
 elseif(mp.menu(2).Value == 3)
-    s = strcat('/data/recon_mpe/',subj.name,'/',subj.name,'_anat_brain.nii');
-    fname_anat = s;
-elseif(mp.menu(2).Value == 4)
-    s = strcat('/data/recon_MD/',subj.name,'/',subj.name,'_anat_brain.nii');
+    s = strcat('data/recon/',subj.name,'/',subj.name,'_anat_brain.nii');
     fname_anat = s;
 end
 
@@ -131,9 +148,9 @@ anat.slice_y = 104;
 anat.slice_z = 55; 
 
 %  Slice ranges
-anat.xrange = [1:anat.x];
-anat.yrange = [1:anat.y];
-anat.zrange = [1:anat.z]; 
+anat.xrange = (1:anat.x);
+anat.yrange = (1:anat.y);
+anat.zrange = (1:anat.z); 
 
 %  Adjusting the contrast of the anatomical scans (shrink the window of the range of values)
 anat.sigmin = 10; 
@@ -175,19 +192,47 @@ elseif(mp.menu(3).Value==3)
     subj.breathhold = 'BH2';
 end
 
+% switch(mp.menu(1).Value)
+%     case(2)
+%         if (mp.menu(2).Value == 2)
+%             type = 'none_boxcar';
+%             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+%             fname_mapped = s2;
+%         elseif(mp.menu(2).Value == 3)
+%             type = 'mpe_boxcar';
+%             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+%             fname_mapped = s2;
+%         elseif(mp.menu(2).Value == 4)
+%             type = 'MD_boxcar';
+%             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+%             fname_mapped = s2;
+%         end    
+%         
+%     case(3)
+%         if (mp.menu(2).Value == 2)
+%             type = 'none_pf';
+%             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+%             fname_mapped = s2;
+%         elseif(mp.menu(2).Value == 3)
+%             type = 'mpe_pf';
+%             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+%             fname_mapped = s2;
+%         elseif(mp.menu(2).Value == 4)
+%             type = 'MD_pf';
+%             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+%             fname_mapped = s2;
+%         end    
+% end
+
 switch(mp.menu(1).Value)
     case(2)
         if (mp.menu(2).Value == 2)
-            type = 'none_boxcar';
+            type = 'none_boxcar'; % making default temporal filtering none for now 
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         elseif(mp.menu(2).Value == 3)
-            type = 'mpe_boxcar';
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
-            fname_mapped = s2;
-        elseif(mp.menu(2).Value == 4)
-            type = 'MD_boxcar';
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+            type = 'not_processed';
+            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_masked_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
         
@@ -197,12 +242,8 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         elseif(mp.menu(2).Value == 3)
-            type = 'mpe_pf';
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
-            fname_mapped = s2;
-        elseif(mp.menu(2).Value == 4)
-            type = 'MD_pf';
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
+            type = 'not_processed_pf';
+            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_masked_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
 end
