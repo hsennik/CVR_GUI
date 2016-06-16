@@ -4,7 +4,8 @@ clear all;
 close all;
 
 addpath('/data/wayne/matlab/NIFTI');
-subj.name = 'ChanR16'; % This should be user driven or pulled from run_python
+fileID = fopen('/data/hannahsennik/MATLAB/CVR_GUI/subject_name.txt','r');
+subj.name = fscanf(fileID,'%s\n');
 dir_input = strcat('/data/projects/CVR/GUI_subjects/',subj.name);
 subj.date = '160314';
 
@@ -231,7 +232,7 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         elseif(mp.menu(2).Value == 3)
-            type = 'not_processed';
+            type = 'no_processing_boxcar';
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_masked_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
@@ -242,7 +243,7 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         elseif(mp.menu(2).Value == 3)
-            type = 'not_processed_pf';
+            type = 'no_processing_pf';
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_masked_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
@@ -288,6 +289,9 @@ ax_window.montage_b = uicontrol('Style','togglebutton',...
                                 'callback',{@make_montage,anat,funct,mp,type,subj,dir_input});
 
 imshow(anat.slice_ax);
+
+jButton = findjobj(ax_window.slider);
+jButton.MouseWheelMovedCallback = 'disp(clock)';
 
 %  CORONAL WINDOW
 
