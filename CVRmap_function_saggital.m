@@ -1,6 +1,6 @@
-function CVRmap_function_saggital(anat,funct,mp)
+function CVRmap_function_sagittal(anat,funct,mp)
 
-%  Saggital functional data
+%  sagittal functional data
 
 funct.sag.mapped_anat = double(repmat(imresize(squeeze(funct.mapped_anat.img(anat.slice_x,:,:)),[anat.y anat.z]), [1 1 3]));
 funct.sag.mask = double(imresize(squeeze(funct.mapped_anat.img(anat.slice_x,:,:)),[anat.y anat.z],'nearest'));
@@ -10,7 +10,7 @@ funct.sag.mask = imresize(funct.sag.mask,[anat.y anat.z/anat.hdr.dime.pixdim(2)]
 funct.sag.mask = rot90(funct.sag.mask(anat.yrange,anat.zrange,:));
 funct.sag.mask = flip(funct.sag.mask,2);
 
-%  SAGGITAL
+%  sagittal
 
 thresh_indices3 = find (funct.sag.mask < (max(funct.sag.mask(:))-0.001)); % find all indices that contain the values specified
 thresh_vec3 = reshape (funct.sag.mask, [(size(funct.sag.mask,1)*size(funct.sag.mask,2)) 1]); % turn 3D array into vector 
