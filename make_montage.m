@@ -32,5 +32,18 @@ imwrite(mymontage.CData,strcat(dir_input,'/clinician_final/',subj.name,'_',subj.
 %  Display the montage in the montage window
 display('Montage saved');
 
+
+temp_stim = mp.menu(1).String(mp.menu(1).Value);
+stimfile = temp_stim{1};
+
+mkdir('REDCap_import_files/final');
+if strcmp(mp.menu(2).String(mp.menu(2).Value),'no') == 1
+    copyfile(strcat('REDCap_import_files/all/',subj.name,'_processing_parameters.txt'),'REDCap_import_files/final/','f');
+    copyfile(strcat('REDCap_import_files/all/',subj.name,'_',stimfile,'_analysis_parameteres.txt'),'REDCap_import_files/final/','f');
+else
+    copyfile(strcat('REDCap_import_files/all/',subj.name,'_none_processing_parameters.txt'),'REDCap_import_files/final/','f');
+    copyfile(strcat('REDCap_import_files/all/',subj.name,'_none_',stimfile,'_analysis_parameters.txt'),'REDCap_import_files/final/','f');
+end
+
 end
         
