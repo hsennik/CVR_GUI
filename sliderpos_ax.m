@@ -1,4 +1,6 @@
-function sliderpos_ax(source,callbackdata,anat,mp,funct,ax_window)
+function sliderpos_ax(source,callbackdata,anat,mp,funct,ax_window,dir_input,subj)
+
+global ax_slider_value; 
 
 ax_slider_value = get(source, 'Value'); %get the value of the slider position
 
@@ -14,7 +16,12 @@ updated_slice = flip(updated_slice,2);
 if (mp.CVRb.Value == 1)
    CVRmap_function_axial(anat,funct,mp);
 else
+   ax_window.image = updated_slice;
    imshow(updated_slice);
+end
+
+if(ax_window.drawROI.Value == 1)
+    drawROI(updated_slice,anat,dir_input,subj);
 end
 
 end
