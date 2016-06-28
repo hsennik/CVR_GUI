@@ -34,25 +34,25 @@ imshow(get_signal);
 %  Create a mask from freehand ROI 
 binaryImage = h.createMask();
 imshow(binaryImage);
-binaryImage = flip(binaryImage,2);
-binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:));
-binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:));
-binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:));
-imshow(binaryImage);
-% nii = make_nii(binaryImage);
-% save_mask = strcat('timeseries/mask.nii');
-% save_nii(nii,save_mask);
+% binaryImage = flip(binaryImage,2);
+% binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:));
+% binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:));
+% binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:));
+% imshow(binaryImage);
+nii = make_nii(binaryImage);
+save_mask = strcat('timeseries/mask.nii');
+save_nii(nii,save_mask);
 
 %  Display the free hand mask 
 %         figure,
 %         imshow(binaryImage);
-%  Calculate the area, in pixels, of the ROI 
-numberOfPixels = sum(binaryImage(:));
-%  Get coordinates of the boundary of the freehand drawing
-structBoundaries = bwboundaries(binaryImage);
-xy = structBoundaries{1};
-x = xy(:,2);
-y = xy(:,1);
+% %  Calculate the area, in pixels, of the ROI 
+% numberOfPixels = sum(binaryImage(:));
+% %  Get coordinates of the boundary of the freehand drawing
+% structBoundaries = bwboundaries(binaryImage);
+% xy = structBoundaries{1};
+% x = xy(:,2);
+% y = xy(:,1);
 %         hold on;
 %         plot(x,y,'Linewidth',2);
 %         drawnow;
@@ -66,15 +66,15 @@ blackMaskedImage = get_signal(:,:,:);
 blackMaskedImage(~binaryImage) = 0;
 figure,
 imshow(blackMaskedImage);
-
-mkdir(dir_input,'/timeseries');
-fileID = fopen('timeseries/mask.1D','w+'); % Open the text file in write mode to write the processed and stimulus values (initially both will be 1)
-format = '%d\n';
-fprintf(fileID,format,blackMaskedImage); % Write the filtering and stimulus values in the file (they will be used in process_fmri and analyze_fmri)
-fclose(fileID);
-
-nii = make_nii(get_signal);
-save_mask = strcat('timeseries/get_signal.nii');
-save_nii(nii,save_mask);
+% 
+% mkdir(dir_input,'/timeseries');
+% fileID = fopen('timeseries/mask.1D','w+'); % Open the text file in write mode to write the processed and stimulus values (initially both will be 1)
+% format = '%d\n';
+% fprintf(fileID,format,blackMaskedImage); % Write the filtering and stimulus values in the file (they will be used in process_fmri and analyze_fmri)
+% fclose(fileID);
+% 
+% nii = make_nii(get_signal);
+% save_mask = strcat('timeseries/get_signal.nii');
+% save_nii(nii,save_mask);
 %         thing = vol2vec(blackMaskedImage,0);
 end
