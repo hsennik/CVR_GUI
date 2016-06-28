@@ -24,7 +24,9 @@ greenImg = smaller_anat;
 blueImg = smaller_anat;
 
 positive = find(thresh_values > mp.t.Value);
-% positive_values = thresh_values(positive); 
+positive_values = thresh_values(positive); 
+max_positive_value = max(positive_values);
+min_positive_value = min(positive_values);
 % positive_full_array = zeros((size(funct.ax.mask,1)*size(funct.ax.mask,2)),1);
 % positive_full_array(positive) = 1; % equals one makes a binary mask (all positive values will have the same intensity of red)
 % positive_full_array_vol = reshape(positive_full_array,[size(funct.ax.mask,1) size(funct.ax.mask,2) 1]);
@@ -33,7 +35,9 @@ positive = find(thresh_values > mp.t.Value);
 % positive_full_array_vol = flip(positive_full_array_vol,2);
 
 negative = find(thresh_values < -mp.t.Value);
-% negative_values = thresh_values(negative);
+negative_values = thresh_values(negative);
+max_negative_value = min(negative_values);
+min_negative_value = max(negative_values);
 % negative_full_array = zeros((size(funct.ax.mask,1)*size(funct.ax.mask,2)),1);
 % negative_full_array(negative) = 1;
 % negative_full_array_vol = reshape(negative_full_array,[size(funct.ax.mask,1) size(funct.ax.mask,2) 1]);
@@ -50,12 +54,15 @@ negative = find(thresh_values < -mp.t.Value);
 % 
 % imshow(anat.slice_ax);
 
-redImg(positive) = 255;
+normalized_positive = (positive_values-min_positive_value)/(max_positive_value-min_positive_value);
+normalized_negative = (negative_values-min_negative_value)/(max_negative_value-min_negative_value);
+
+redImg(positive) = normalized_positive;
 redImg(negative) = 0;
 greenImg(positive) = 0;
 greenImg(negative) = 0;
 blueImg(positive) = 0;
-blueImg(negative) = 255;
+blueImg(negative) = normalized_negative;
 
 rgbImage = cat(3,redImg,greenImg,blueImg);
 
