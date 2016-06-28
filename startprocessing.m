@@ -31,22 +31,22 @@ fprintf(fileID,format,1); % Write the number 1 to not do processing
 command = strcat('python metadata/process_fmri.py metadata/S_CVR_',subj.name,'.txt  metadata/P_CVR_',subj.name,'.txt --clean');
 status = system(command);
 
-for a = 1:2
-    if a == 1
-        breathhold = 'BH1';
-        display('BH1');
-    else
-        breathhold = 'BH2';
-        display('BH2');
-    end
-    %  Map the processed data to anatomical space 
-    command = strcat('flirt -in data/processed/CVR_',subj.date,'/',subj.name,'/',subj.name,'_',breathhold,'_trim_mc_ts_tfilt_2Dsm7.nii -ref data/recon/',subj.name,'/',subj.name,'_anat_brain.nii -out flirt/',subj.name,'_',breathhold,'_processed_to_anat.nii -omat flirt/',subj.name,'_',breathhold,'_processed_to_anat.mat -dof 12');
-    status = system(command);
-
-    %  Map the unprocessed data to anatomical space 
-    command = strcat('flirt -in data/processed_not/CVR_',subj.date,'/',subj.name,'/',subj.name,'_',breathhold,'_CVR_',subj.date,'.nii -ref data/recon/',subj.name,'/',subj.name,'_anat_brain.nii -out flirt/',subj.name,'_',breathhold,'_processed_not_to_anat.nii -omat flirt/',subj.name,'_',breathhold,'_processed_not_to_anat.mat -dof 12');
-    status = system(command);
-end
+% for a = 1:2
+%     if a == 1
+%         breathhold = 'BH1';
+%         display('BH1');
+%     else
+%         breathhold = 'BH2';
+%         display('BH2');
+%     end
+%     %  Map the processed data to anatomical space 
+%     command = strcat('flirt -in data/processed/CVR_',subj.date,'/',subj.name,'/',subj.name,'_',breathhold,'_trim_mc_ts_tfilt_2Dsm7.nii -ref data/recon/',subj.name,'/',subj.name,'_anat_brain.nii -out flirt/',subj.name,'_',breathhold,'_processed_to_anat.nii -omat flirt/',subj.name,'_',breathhold,'_processed_to_anat.mat -dof 12');
+%     status = system(command);
+% 
+%     %  Map the unprocessed data to anatomical space 
+%     command = strcat('flirt -in data/processed_not/CVR_',subj.date,'/',subj.name,'/',subj.name,'_',breathhold,'_CVR_',subj.date,'.nii -ref data/recon/',subj.name,'/',subj.name,'_anat_brain.nii -out flirt/',subj.name,'_',breathhold,'_processed_not_to_anat.nii -omat flirt/',subj.name,'_',breathhold,'_processed_not_to_anat.mat -dof 12');
+%     status = system(command);
+% end
 
 %  PROCESSED using no temporal filtering and NOTPROCESSED, ANALYZED using boxcar and pf, BH1 BH2
 for i=1:2 % First for loop goes through processed and not processed
@@ -95,11 +95,13 @@ for i=1:2 % First for loop goes through processed and not processed
         display(destination_name_P);
         
         if(stimulus == 2) % If stimulus selected is pf then have to transform standard data to the subject space to create 1D pf stimfile
-            for bh_pf=1:2
+            for bh_pf=1:3
                 if bh_pf == 1
                     subj.breathhold = 'BH1';
                 elseif bh_pf == 2
                     subj.breathhold = 'BH2';
+                elseif bh_pf == 3
+                    subj.breathhold = 'HV';
                 end
                 
                 s1 = 'flirt -in standard_files/avg152T1_brain.nii.gz -ref data/processed';
@@ -161,12 +163,14 @@ for i=1:2 % First for loop goes through processed and not processed
 
         display(destination_name_A);
         
-        for k=1:2 % Third for loop goes through the breathholds and maps the functional data to be displayed to the user 
+        for k=1:3 % Third for loop goes through the breathholds and maps the functional data to be displayed to the user 
             breathhold = k;
             if(breathhold ==1)
                 subj.breathhold = 'BH1';
             elseif(breathhold ==2)
                 subj.breathhold = 'BH2';
+            elseif(breathhold==3)
+                subj.breathhold = 'HV';
             end
             
             str1 = 'flirt -in data/analyzed_';
@@ -222,7 +226,7 @@ fclose(fileID);
 
 display('ALL DONE');
 
-set(handles.look,'Enable','on'); % Enable the push button for the user to look at the processed and analyzed subject data
+%  set(handles.look,'Enable','on'); % Enable the push button for the user to look at the processed and analyzed subject data
 
 end
 
