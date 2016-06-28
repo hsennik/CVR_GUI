@@ -41,7 +41,7 @@ mp.text(3) = uicontrol('Style','text',...
 
 mp.STR = {'','boxcar','pf'}; % String for stimfile popup
 mp.STR2 = {'','yes','no'}; % String for pre-processing popup
-mp.STR3 = {'','BH1','BH2'}; % String for breathhold popup
+mp.STR3 = {'','BH1','BH2','HV'}; % String for breathhold popup
 
 %  Create menu for pre-processing (yes or no)
 mp.menu(2) = uicontrol('Style','popupmenu',...
@@ -107,7 +107,7 @@ mp.t = uicontrol('Style','slider',...
                 'SliderStep',[0.0001,0.001],...
                 'position',[0.70 0.34 0.25 0.2],...
                 'callback',{@t_slider,mp});
-
+    
 waitfor(mp.menu(2),'Value'); % Wait for user to select whether they want processing or not 
 set(mp.menu(2),'Enable','off'); % Disable the processing dropdown after selection 
 
@@ -167,6 +167,8 @@ if(mp.menu(3).Value==2)
     subj.breathhold = 'BH1';
 elseif(mp.menu(3).Value==3)
     subj.breathhold = 'BH2';
+elseif(mp.menu(3).Value==4)
+    subj.breathhold = 'HV';
 end
 
 fileID = fopen(strcat(dir_input,'/customize_boxcar.txt'),'r'); % read from customize_boxcar text file 
