@@ -7,6 +7,9 @@
 %  SUBJECT. Generates files that are used for display later. User can then
 %  LOOK AT SUBJECT by choosing to run the display GUI.
 
+clear all;
+close all;
+
 addpath('/data/wayne/matlab/NIFTI'); % path to nii functions
 directory = ('/data/projects/CVR/GUI_subjects/'); % base directory where all CVR subjects are stored
 cd(directory); % change to this directory 
