@@ -207,6 +207,7 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
+        montage_info = strcat(placeholder,'_boxcar');
         
     case(3) % mp.menu(1) stimfile selection is pf 
         if (mp.menu(2).Value == 2) % mp.menu(2) selection indicates use processed data 
@@ -218,6 +219,7 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
+        montage_info = 'pf';
 end
 
 %  Load the functional file that was transformed to anatomical space 
@@ -264,7 +266,7 @@ ax_window.montage_b = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Generate Montage',...
                                 'Value',0,'Position',[130,15,150,30],...
-                                'callback',{@make_montage,anat,funct,mp,type,subj,dir_input});                          
+                                'callback',{@make_montage,anat,funct,mp,type,subj,dir_input,montage_info});                          
 
 % Display the axial slice 
 ax_window.image = imshow(anat.slice_ax);
