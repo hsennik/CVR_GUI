@@ -41,7 +41,7 @@ mp.text(3) = uicontrol('Style','text',...
 
 mp.STR = {'','boxcar','pf'}; % String for stimfile popup
 mp.STR2 = {'','yes','no'}; % String for pre-processing popup
-mp.STR3 = {'','BH1','BH2'}; % String for breathhold popup
+mp.STR3 = {'','BH1','BH2','HV'}; % String for breathhold popup
 
 %  Create menu for pre-processing (yes or no)
 mp.menu(2) = uicontrol('Style','popupmenu',...
@@ -107,7 +107,7 @@ mp.t = uicontrol('Style','slider',...
                 'SliderStep',[0.0001,0.001],...
                 'position',[0.70 0.34 0.25 0.2],...
                 'callback',{@t_slider,mp});
-
+    
 waitfor(mp.menu(2),'Value'); % Wait for user to select whether they want processing or not 
 set(mp.menu(2),'Enable','off'); % Disable the processing dropdown after selection 
 
@@ -167,6 +167,8 @@ if(mp.menu(3).Value==2)
     subj.breathhold = 'BH1';
 elseif(mp.menu(3).Value==3)
     subj.breathhold = 'BH2';
+elseif(mp.menu(3).Value==4)
+    subj.breathhold = 'HV';
 end
 
 fileID = fopen(strcat(dir_input,'/customize_boxcar.txt'),'r'); % read from customize_boxcar text file 
@@ -205,6 +207,7 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
+        montage_info = strcat(placeholder,'_boxcar');
         
     case(3) % mp.menu(1) stimfile selection is pf 
         if (mp.menu(2).Value == 2) % mp.menu(2) selection indicates use processed data 
@@ -216,6 +219,7 @@ switch(mp.menu(1).Value)
             s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
             fname_mapped = s2;
         end    
+        montage_info = 'pf';
 end
 
 %  Load the functional file that was transformed to anatomical space 
@@ -262,7 +266,7 @@ ax_window.montage_b = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Generate Montage',...
                                 'Value',0,'Position',[130,15,150,30],...
-                                'callback',{@make_montage,anat,funct,mp,type,subj,dir_input});                          
+                                'callback',{@make_montage,anat,funct,mp,type,subj,dir_input,montage_info});                          
 
 % Display the axial slice 
 ax_window.image = imshow(anat.slice_ax);

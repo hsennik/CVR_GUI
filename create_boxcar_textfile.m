@@ -1,10 +1,14 @@
-function create_boxcar_textfile(source,callbackdata,subj,dir_input)
+function create_boxcar_textfile(source,callbackdata,subj,dir_input,HV)
 
 handles = guidata(source);
-
+if HV == 1
+    subj.breathhold = 'HV';
+else
+    subj.breathhold = 'BH1';
+end
 %  Create while loop that allows user to keep doing this until they press
 %  USE BOXCAR BUTTON 
-customized_stimfile = strcat(dir_input,'metadata/stim/bhonset',subj.name,'_customized.txt'); % Create the textfile for the stimfile 
+customized_stimfile = strcat(dir_input,'metadata/stim/bhonset',subj.name,'_',subj.breathhold,'_customized.1D'); % Create the textfile for the stimfile 
 fileID = fopen(customized_stimfile,'w+');
 format = '%d\n';
 display('customized stim file created');
@@ -50,5 +54,11 @@ for i = 1:number_blocks
 end
 
 fclose(fileID);
+if strcmp(subj.breathhold,'BH1') == 1
+    subj.breathhold = 'BH2';
+    copyfile(customized_stimfile,strcat(dir_input,'metadata/stim/bhonset',subj.name,'_',subj.breathhold,'_customized.1D'),'f');
+    set(handles.HVboxcar,'Enable','on');
+end
 set(handles.viewboxcar,'Enable','on'); % Enable viewboxcar pushbutton
+
 end
