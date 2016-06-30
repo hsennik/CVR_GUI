@@ -7,15 +7,12 @@ end
     newplot = load(stimlocation);
     if HV ==1
         name = 'Customized HV boxcar plot';
-        pos = [950,400,500,300];
     else
         name = 'Customized BH boxcar plot';
-        pos = [400,400,500,300];
     end
-    
     figure('Name',name,...
            'Visible','on',...
-            'Position',pos); 
+            'Position',[400,800,500,300]); 
     plot(newplot); 
     
 end
