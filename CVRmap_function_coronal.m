@@ -12,9 +12,9 @@ funct.cor.mask = flip(funct.cor.mask,2);
 
 %  CORONAL
 
-thresh_indices2 = find (funct.cor.mask < (max(funct.cor.mask(:))-0.001)); % find all indices that contain the values specified
-thresh_vec2 = reshape (funct.cor.mask, [(size(funct.cor.mask,1)*size(funct.cor.mask,2)) 1]); % turn 3D array into vector 
-thresh_values2 = thresh_vec2(thresh_indices2); % place the values at specified array indices in to another array
+thresh_indices = find (funct.cor.mask < (max(funct.cor.mask(:))-0.001)); % find all indices that contain the values specified
+thresh_vec = reshape (funct.cor.mask, [(size(funct.cor.mask,1)*size(funct.cor.mask,2)) 1]); % turn 3D array into vector 
+thresh_values = thresh_vec(thresh_indices); % place the values at specified array indices in to another array
 
 anat.slice_cor = (double(repmat(imresize(squeeze(anat.img(:,anat.slice_y,:)),[anat.x anat.z]),[1 1 3]))- anat.sigmin) / anat.sigmax;
 anat.slice_cor = imresize(anat.slice_cor,[anat.x anat.z/anat.hdr.dime.pixdim(3)]);
@@ -26,40 +26,41 @@ redImg = smaller_anat;
 greenImg = smaller_anat;
 blueImg = smaller_anat;
 
-positive2 = find(thresh_values2 > mp.t.Value);
-% positive_values2 = thresh_values2(positive2); 
-% positive_full_array2 = zeros((size(funct.cor.mask,1)*size(funct.cor.mask,2)),1);
-% positive_full_array2(positive2) = 1; % equals one makes a binary mask (all positive values will have the same intensity of red)
-% positive_full_array_vol2 = reshape(positive_full_array2,[size(funct.cor.mask,1) size(funct.cor.mask,2) 1]);
-% positive_full_array_vol2 = imresize(positive_full_array_vol2,[anat.x anat.z/anat.hdr.dime.pixdim(3)]);
-% positive_full_array_vol2 = rot90(positive_full_array_vol2(anat.xrange,anat.zrange,:));
-% positive_full_array_vol2 = flip(positive_full_array_vol2,2);
+positive = find(thresh_values > mp.t.Value);
+positive_values = thresh_values(positive); 
+[max_positive_value,max_positive_index] = max(positive_values);
+min_positive_value = min(positive_values);
 
-negative2 = find(thresh_values2 < -mp.t.Value);
-% negative_values2 = thresh_values2(negative2);
-% negative_full_array2 = zeros((size(funct.cor.mask,1)*size(funct.cor.mask,2)),1);
-% negative_full_array2(negative2) = 1;
-% negative_full_array_vol2 = reshape(negative_full_array2,[size(funct.cor.mask,1) size(funct.cor.mask,2) 1]);
-% negative_full_array_vol2 = imresize(negative_full_array_vol2,[anat.x anat.z/anat.hdr.dime.pixdim(3)]);
-% negative_full_array_vol2 = rot90(negative_full_array_vol2(anat.xrange,anat.zrange,:));
-% negative_full_array_vol2 = flip(negative_full_array_vol2,2);
+negative = find(thresh_values < -mp.t.Value);
+negative = find(thresh_values < -mp.t.Value);
+negative_values = thresh_values(negative);
+[max_negative_value,max_negative_index] = min(negative_values);
+min_negative_value = max(negative_values);
 
-% anat.slice_cor = (double(repmat(imresize(squeeze(anat.img(:,anat.slice_y,:)),[anat.x anat.z]),[1 1 3]))- anat.sigmin) / anat.sigmax;
-% anat.slice_cor = imresize(anat.slice_cor,[anat.x anat.z/anat.hdr.dime.pixdim(3)]);
-% anat.slice_cor = rot90(anat.slice_cor(anat.xrange,anat.zrange,:));
-% anat.slice_cor = flip(anat.slice_cor,2);
+neg_diff = max_negative_value - min_negative_value;
+pos_diff = max_positive_value - min_positive_value;
 
-% anat.slice_cor(:,:,1) = anat.slice_cor(:,:,1) + positive_full_array_vol2; 
-% anat.slice_cor(:,:,3) = anat.slice_cor(:,:,3) + negative_full_array_vol2;
-% 
-% imshow(anat.slice_cor);
+AUTO = 1;
 
-redImg(positive2) = 255;
-redImg(negative2) = 0;
-greenImg(positive2) = 0;
-greenImg(negative2) = 0;
-blueImg(positive2) = 0;
-blueImg(negative2) = 255;
+% logic to determine normalization denominator (have to still add this
+% functionality in - user input in text box) 
+if AUTO == 1
+    norm_denom = max(abs(neg_diff), abs(pos_diff));
+else
+    norm_denom = user_input;
+end
+
+normalized_positive = (positive_values - min_positive_value)/(norm_denom);
+normalized_negative = (negative_values - min_negative_value)/(-norm_denom);
+
+multiplier = 7; 
+
+redImg(positive) = (1 - normalized_positive)*multiplier;
+redImg(negative) = 0;
+greenImg(positive) = normalized_positive;   
+greenImg(negative) = normalized_negative;
+blueImg(positive) = 0;
+blueImg(negative) = (1 - normalized_negative)*multiplier;
 
 rgbImage = cat(3,redImg,greenImg,blueImg);
 
