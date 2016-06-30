@@ -1,4 +1,4 @@
-function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input)
+function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input,montage_info)
 
     %  for loop to cycle through calling the function to save CVR slices
     %  as jpg
@@ -37,13 +37,12 @@ function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input)
     stimfile = temp_stim{1};
 
     mkdir('REDCap_import_files/final');
-    if strcmp(mp.menu(2).String(mp.menu(2).Value),'no') == 1
-        copyfile(strcat('REDCap_import_files/all/',subj.name,'_processing_parameters.txt'),'REDCap_import_files/final/','f');
-        copyfile(strcat('REDCap_import_files/all/',subj.name,'_',stimfile,'_analysis_parameters.txt'),'REDCap_import_files/final/','f');
+    if strcmp(mp.menu(2).String(mp.menu(2).Value),'yes') == 1
+        copyfile(strcat('REDCap_import_files/all/',subj.name,'_processed_parameters.txt'),'REDCap_import_files/final/','f');
     else
-        copyfile(strcat('REDCap_import_files/all/',subj.name,'_none_processing_parameters.txt'),'REDCap_import_files/final/','f');
-        copyfile(strcat('REDCap_import_files/all/',subj.name,'_none_',stimfile,'_analysis_parameters.txt'),'REDCap_import_files/final/','f');
+        copyfile(strcat('REDCap_import_files/all/',subj.name,'_not_processed_parameters.txt'),'REDCap_import_files/final/','f');
     end
 
+    copyfile(strcat('REDCap_import_files/all/',subj.name,'_',montage_info,'_analyzed_parameters.txt'),'REDCap_import_files/final/','f');
 end
         
