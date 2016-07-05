@@ -1,16 +1,20 @@
 function CVRmap_function_sagittal(anat,funct,mp)
+% Function to generate sagittal CVR map 
+% 
+% INPUTS 
+%     anat - 3D anatomical subject data 
+%     funct - 4D functional subject data 
+%     mp - GUI data
+% 
+% *************** REVISION INFO ***************
+% Original Creation Date - June 15, 2016
+% Author - Hannah Sennik
 
-%  sagittal functional data
-
-funct.sag.mapped_anat = double(repmat(imresize(squeeze(funct.mapped_anat.img(anat.slice_x,:,:)),[anat.y anat.z]), [1 1 3]));
+% Sagittal functional data
 funct.sag.mask = double(imresize(squeeze(funct.mapped_anat.img(anat.slice_x,:,:)),[anat.y anat.z],'nearest'));
-funct.sag.pixel_dimension = funct.mapped_anat.hdr.dime.pixdim(2);
-
 funct.sag.mask = imresize(funct.sag.mask,[anat.y anat.z/anat.hdr.dime.pixdim(2)]);
 funct.sag.mask = rot90(funct.sag.mask(anat.yrange,anat.zrange,:));
 funct.sag.mask = flip(funct.sag.mask,2);
-
-%  sagittal
 
 thresh_indices = find (funct.sag.mask < (max(funct.sag.mask(:))-0.001)); % find all indices that contain the values specified
 thresh_vec = reshape (funct.sag.mask, [(size(funct.sag.mask,1)*size(funct.sag.mask,2)) 1]); % turn 3D array into vector 

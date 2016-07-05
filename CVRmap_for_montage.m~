@@ -34,16 +34,15 @@ blueImg = smaller_anat;
 
 %  Find positive values 
 positive = find(thresh_values > mp.t.Value); %  find indices of positive values 
-positive_values = thresh_values(positive); %  place positive values in an array 
+positive_values = thresh_values(positive);  
 [max_positive_value,max_positive_index] = max(positive_values); %  find the max positive value and its index 
 min_positive_value = min(positive_values); %  find the min positive value 
 
-negative = find(thresh_values < -mp.t.Value); %  find indices of negative values 
-negative_values = thresh_values(negative); %  place negative values in an array 
-[max_negative_value,max_negative_index] = min(negative_values); %  find max negative value and its index 
-min_negative_value = max(negative_values); %  find the min negative value 
+negative = find(thresh_values < -mp.t.Value);
+negative_values = thresh_values(negative);
+[max_negative_value,max_negative_index] = min(negative_values);
+min_negative_value = max(negative_values);
 
-%  Differences between max and min values (for normalization)
 neg_diff = max_negative_value - min_negative_value;
 pos_diff = max_positive_value - min_positive_value;
 
@@ -52,29 +51,28 @@ AUTO = 1;
 % logic to determine normalization denominator (have to still add this
 % functionality in - user input in text box) 
 if AUTO == 1
-    norm_denom = max(abs(neg_diff), abs(pos_diff)); %  Take the max difference to use as normalization denominator 
+    norm_denom = max(abs(neg_diff), abs(pos_diff));
 else
-    norm_denom = user_input; %  Allow for user input of normalization denominator 
+    norm_denom = user_input;
 end
 
-%  Normalize the values to be between 0 and 1 
 normalized_positive = (positive_values - min_positive_value)/(norm_denom);
 normalized_negative = (negative_values - min_negative_value)/(-norm_denom);
 
-multiplier = 7; %  necessary to avoid green showing up in CVR map 
+multiplier = 7;
 
-redImg(positive) = (1 - normalized_positive)*multiplier; %  Red is associated with positive correlation 
+redImg(positive) = (1 - normalized_positive)*multiplier;
 redImg(negative) = 0;
-greenImg(positive) = normalized_positive; %  Add in green channel so that there is colour variation 
+greenImg(positive) = normalized_positive;
 greenImg(negative) = normalized_negative;
 blueImg(positive) = 0;
-blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
+blueImg(negative) = (1 - normalized_negative)*multiplier;
 
-rgbImage = cat(3,redImg,greenImg,blueImg); %  concatenate the red, green, and blue images 
+rgbImage = cat(3,redImg,greenImg,blueImg);
 
 imshow(rgbImage);
 
-imwrite(rgbImage,strcat(gen_file_location,'slice',sliceval,'.jpg')); %  write the image to a jpeg to be used in montage 
+imwrite(rgbImage,strcat(gen_file_location,'slice',sliceval,'.jpg'));
 
 end
 
