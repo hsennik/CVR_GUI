@@ -45,6 +45,7 @@ display(subj.name);
 dir_input = strcat(directory,subj.name,'/');
 cd(dir_input); % Change to subject's directory 
 subj.date = '160314'; % What is this - is it the same for all subjects?
+mkdir('textfiles');
 
 matlabdir = '/data/hannahsennik/MATLAB/CVR_GUI';
 fileID = fopen(strcat(matlabdir,'/subject_name.txt'),'w+'); % Open the subject name text file in write mode
