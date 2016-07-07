@@ -22,10 +22,9 @@ mkdir(dir_input,'/timeseries'); % make a directory to save ROI mask and timeseri
 
 data_out = anat; % creating a struct with same header info as anat (this will be used for the mask)
 
-fileID = fopen(strcat(dir_input,'/metadata/processing.txt'),'r'); % open processing text file to see if user selected processed or raw data 
+fileID = fopen(strcat(dir_input,'/textfiles/processing.txt'),'r'); % open processing text file to see if user selected processed or raw data 
 format = '%d';
 A = fscanf(fileID,format);
-
 if A == 1
     tag = 'processed';
 else
@@ -54,7 +53,7 @@ save_nii(data_out,save_mask);
 
 display('YES nii saved');
 
-fileID = fopen(strcat(dir_input,'/customize_boxcar.txt'),'r'); % open the customize boxcar file
+fileID = fopen(strcat(dir_input,'/textfiles/customize_boxcar.txt'),'r'); % open the customize boxcar file
 format = '%d';
 A = fscanf(fileID,format);
 
@@ -91,9 +90,13 @@ ts = figure('Name','Timeseries',...
        'Visible','on',...
        'Numbertitle','off');  
 plot(timeseries_plot);
+title('Timeseries vs. Stimulus')
+xlabel('Time')
+ylabel('BOLD Signal')
 hold; % hold the plot 
 stimfile = load(stim); % load the stimfile used to generate the parametric map 
 stimfile = stimfile + (median(timeseries_plot) - median(stimfile)) + 50; % move the plot up so that user can easily compare timeseries and stim
 plot(stimfile); % plot the stimfile 
+legend('Timeseries from ROI','Stimfile signal')
 
 end
