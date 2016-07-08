@@ -1,12 +1,18 @@
-function create_HVboxcar(source,callbackdata,subj,dir_input)
+function create_HVboxcar(source,callbackdata,subj,dir_input,sp)
 
-HV = 1;
+handles = guidata(source);
 
+same_boxcar = 0;
+
+breath = 3;
+
+if handles.custom(3).Value == 1
     %  Create a new figure for boxcar customization
     
     cbHV.f = figure('Name', 'Create customized HV boxcar',...
                     'Visible','on',...
-                    'Position',[950,800,500,300]);
+                    'Position',[1450,800,500,300],...
+                    'numbertitle','off');
     
     %  Create data entry boxes for customized boxcar - user enters start and
     %  end times 
@@ -79,7 +85,7 @@ HV = 1;
                               'String','Create Boxcar',...
                               'Enable','off',...
                               'Value',0,'Position',[350,150,150,45],...
-                              'Callback',{@create_boxcar_textfile,subj,dir_input,HV});
+                              'Callback',{@create_boxcar_textfile,subj,dir_input,breath,sp,same_boxcar});
 
     %  Create push button to use customized boxcar (user can re-enter data in
     %  fields until this button is pressed) 
@@ -88,10 +94,16 @@ HV = 1;
                               'String','View Boxcar',...
                               'Enable','off',...
                               'Value',0,'Position',[350,90,150,45],...
-                              'Callback',{@viewboxcar,subj,dir_input,HV});
-   guidata(cbHV.f,cbHV);   
+                              'Callback',{@viewboxcar,subj,dir_input,breath});
+    guidata(cbHV.f,cbHV);   
     
     waitfor(cbHV.normal_breathing_duration,'String');
-    set(cbHV.createboxcar,'Enable','on');                       
+    set(cbHV.createboxcar,'Enable','on');        
+    set(sp.start,'Enable','on');
+else
+    figures_to_close = findall(0,'Type','figure'); %  Close the BH customize boxcar figure
+    display(figures_to_close);
+    close('Create customized HV boxcar');
+end
 end
                           
