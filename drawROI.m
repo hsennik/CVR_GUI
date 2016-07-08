@@ -53,14 +53,14 @@ save_nii(data_out,save_mask);
 
 display('YES nii saved');
 
-fileID = fopen(strcat(dir_input,'/textfiles/customize_boxcar.txt'),'r'); % open the customize boxcar file
+fileID = fopen(strcat(dir_input,'/textfiles/standard_or_custom.txt'),'r'); % open the customize boxcar file
 format = '%d';
 A = fscanf(fileID,format);
 
 % Determine which stimfile was used so that it can be displayed with the
 % timeseries 
 if(mp.menu(1).Value == 2)
-    if A == 1
+    if A == 1 && strcmp(mp.boxcarsel.String,'Boxcar selection: customized') == 1
         stim = strcat('metadata/stim/bhonset',subj.name,'_',subj.breathhold,'_customized.1D');
     else
         stim = strcat('metadata/stim/bhonset',subj.name,'_',subj.breathhold,'.1D');
@@ -72,7 +72,6 @@ elseif(mp.menu(1).Value == 3)
         stim = strcat('metadata/stim/pf_',subj.breathhold,'_stim.1D');
     end
 end
-
 
 % Transform the mask from anatomical space to functional space - save as
 % finalmask.nii 
