@@ -13,12 +13,13 @@ function create_boxcar(source,callbackdata,subj,dir_input,sp)
 
 handles = guidata(source);
 
-HV = 0; %  Variable gets inputted to 'create_boxcar_textfile.m' to indicate that it is not the HV stimfile that is to be created
+breath = 1; %  Variable gets inputted to 'create_boxcar_textfile.m' to indicate which breathhold 
+
+same_boxcar = 0;
 
 if handles.custom(1).Value == 1
-
     %  Create a new figure for boxcar customization
-    cb.f = figure('Name', 'Create customized BH boxcar',...
+    cb.f = figure('Name', 'Create customized BH1 boxcar',...
                     'Visible','on',...
                     'Position',[400,800,500,300],...
                     'numbertitle','off');
@@ -101,7 +102,7 @@ if handles.custom(1).Value == 1
                               'String','Create Boxcar',...
                               'Enable','off',...
                               'Value',0,'Position',[350,150,150,45],...
-                              'Callback',{@create_boxcar_textfile,subj,dir_input,HV,sp});
+                              'Callback',{@create_boxcar_textfile,subj,dir_input,breath,sp,same_boxcar});
 
     %  Create push button to view customized boxcar (user can re-enter data in
     %  fields until this button is pressed) 
@@ -110,13 +111,13 @@ if handles.custom(1).Value == 1
                               'String','View Boxcar',...
                               'Enable','off',...
                               'Value',0,'Position',[350,90,150,45],...
-                              'Callback',{@viewboxcar,subj,dir_input,HV});
+                              'Callback',{@viewboxcar,subj,dir_input,breath,same_boxcar});
 
     %     cb.HVboxcar = uicontrol('Style','togglebutton',...
-    %                               'Visible','on',...
+    %                               'Visiblle','on',...
     %                               'String','Customize HV',...
     %                               'Enable','off',...
-    %                               'Value',0,'Position',[350,30,150,45],...
+    %                               'Value',0,'Position',[350,30,150,45],...l
     %                               'Callback',{@create_HVboxcar,subj,dir_input,sp});
 
     %  Get figure data 
@@ -128,9 +129,7 @@ if handles.custom(1).Value == 1
     %  Then allow the user to click on create boxcar 
     set(cb.createboxcar,'Enable','on');
 else
-    figures_to_close = findall(0,'Type','figure'); %  Close the BH customize boxcar figure
-    display(figures_to_close);
-    close('Create customized BH boxcar');
+    close('Create customized BH1 boxcar');
 end
 
 end

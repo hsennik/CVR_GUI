@@ -1,16 +1,20 @@
 function CVRmap_function_coronal(anat,funct,mp)
+% Function to generate coronal CVR map 
+% 
+% INPUTS 
+%     anat - 3D anatomical subject data 
+%     funct - 4D functional subject data 
+%     mp - GUI data
+% 
+% *************** REVISION INFO ***************
+% Original Creation Date - June 15, 2016
+% Author - Hannah Sennik
 
-%  Coronal functional data
-
-funct.cor.mapped_anat = double(repmat(imresize(squeeze(funct.mapped_anat.img(:,anat.slice_y,:)),[anat.x anat.z]), [1 1 3]));
+% Coronal functional data
 funct.cor.mask = double(imresize(squeeze(funct.mapped_anat.img(:,anat.slice_y,:)),[anat.x anat.z],'nearest'));
-funct.cor.pixel_dimension = funct.mapped_anat.hdr.dime.pixdim(3);
-
 funct.cor.mask = imresize(funct.cor.mask,[anat.x anat.z/anat.hdr.dime.pixdim(3)]);
 funct.cor.mask = rot90(funct.cor.mask(anat.xrange,anat.zrange,:));
 funct.cor.mask = flip(funct.cor.mask,2);
-
-%  CORONAL
 
 thresh_indices = find (funct.cor.mask < (max(funct.cor.mask(:))-0.001)); % find all indices that contain the values specified
 thresh_vec = reshape (funct.cor.mask, [(size(funct.cor.mask,1)*size(funct.cor.mask,2)) 1]); % turn 3D array into vector 
