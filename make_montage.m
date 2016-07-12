@@ -14,16 +14,15 @@ function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input,mont
 % Original Creation Date - June 27, 2016
 % Author - Hannah Sennik
 
-%  Create directory to hold all images in montage
-mkdir(dir_input,strcat('/montage/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'/'));
-gen_file_location = strcat(dir_input,'/montage/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'/');
+%  Create directory to hold all images that will create the montage
+mkdir([dir_input '/montage/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/']);
+gen_file_location = [dir_input '/montage/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/'];
 
 %  For loop to cycle through calling the function to save CVR slices
 %  as jpg
 for i = 6:6:150 % save 25 slices to create 5 by 5 montage, save every six slices 
     anat.slice_z = i;
-    string = int2str(i);
-    CVRmap_for_montage(anat,funct,mp,string,gen_file_location);
+    CVRmap_for_montage(anat,funct,mp,i,gen_file_location); % call the CVRmap_for_montage.m function 
 end
 
 %  Generate file names for each of the CVR slice images 
@@ -33,6 +32,9 @@ fileNames = {strcat(gen_file_location,'slice6.jpg'),strcat(gen_file_location,'sl
 montage_window.f = figure('Name', 'Montage',...  
                         'Visible','on',...
                         'numbertitle','off');
+                    
+set(mp.f, 'MenuBar', 'none'); % remove the menu bar 
+set(mp.f, 'ToolBar', 'none'); % remove the tool bar                     
 
 %  Create 5 by 5 montage
 mymontage = montage(fileNames, 'Size', [5 5]);
@@ -41,15 +43,15 @@ mymontage = montage(fileNames, 'Size', [5 5]);
 mkdir(dir_input,'/clinician_final/');
 
 %  Write the montage to the clinician file
-imwrite(mymontage.CData,strcat(dir_input,'/clinician_final/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'_final_montage.jpg'));
+imwrite(mymontage.CData,strcat(dir_input,'/clinician_final/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'_final_montage.jpg')); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
 
 %  Display the montage in the montage window
 display('Montage saved');
 
-%  If clinician generates a montage, save the parameter data used for that
-%  montage to a text file that can be imported in to REDCap
+%  If clinician generates a montage, move the parameter data used for that
+%  montage to a the final REDCap folder
 mkdir('REDCap_import_files/final');
-if strcmp(mp.menu(2).String(mp.menu(2).Value),'yes') == 1 % processed data 
+if strcmp(mp.menu(2).String(mp.menu(2).Value),'yes') == 1 % user selected processed data on main GUI
     copyfile(strcat('REDCap_import_files/all/',subj.name,'_processed_parameters.txt'),'REDCap_import_files/final/','f');
 else % raw data 
     copyfile(strcat('REDCap_import_files/all/',subj.name,'_not_processed_parameters.txt'),'REDCap_import_files/final/','f');
