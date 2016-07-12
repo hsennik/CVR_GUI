@@ -74,7 +74,7 @@ for i = 1:number_blocks %  Create the specified number of blocks
         halved_normal_breathing_duration = halved_normal_breathing_duration - halved_break_duration; %  remove the break duration for all block after break_after_block
     end
     for j = 1:halved_breathhold_duration
-        fprintf(fileID,format,185);
+        fprintf(fileID,format,100);
     end
     for k = 1:halved_normal_breathing_duration
         fprintf(fileID,format,0);
