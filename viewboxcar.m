@@ -27,6 +27,10 @@ figure('Name',name,...
        'numbertitle','off',...
        'Visible','on',...
         'Position',pos); 
-plot(newplot); 
-    
+plot(newplot,'Color','red','Linewidth',2); 
+title(name);
+xlabel('TR');
+ylabel('Signal');
+ax = gca;
+ax.XTick = [0 20 40 60 80 100 120 140 160 180];
 end
