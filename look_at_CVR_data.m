@@ -10,6 +10,9 @@
 %   Anatomical slices: axial,coronal,sagittal
 %   Parametric maps overlain on anatomicals
 %   Pull timeseries from drawn ROI - plot of timeseries against stimfile 
+%   Pull timeseries from predetermined 3D ROI of brain region 
+%   Axial anatomical images with white matter masked (mask this on the CVR
+%   maps as well)
 %   Montage of parametric maps 
 % 
 % File Name: basic_UI_function.m
@@ -25,7 +28,7 @@ close all; % close all windows
 addpath('/data/wayne/matlab/NIFTI'); % add path to nifti functions 
 fileID = fopen('/data/hannahsennik/MATLAB/CVR_GUI/subject_name.txt','r'); % Subject name is pulled from this textfile (this is the subject that was just fully processed and analyzed)
 subj.name = fscanf(fileID,'%s\n');
-dir_input = strcat('/data/projects/CVR/GUI_subjects/',subj.name);
+dir_input = ['/data/projects/CVR/GUI_subjects/' subj.name];
 subj.date = '160314';
 
 cd(dir_input); % Move in to subject directory 
@@ -35,7 +38,7 @@ cd(dir_input); % Move in to subject directory
 %  Create the MAIN PANEL (mp)
 mp.f = figure('Name', 'CVR Menu',...
                     'Visible','on',...
-                    'Position',[50,800,300,700],...
+                    'Position',[25,750,300,700],...
                     'numbertitle','off');
 
 %  Descriptive text for the processing dropdown menu                
@@ -88,8 +91,8 @@ mp.CVRb = uicontrol('Style','togglebutton',...
                 'String','Overlay CVR map',...
                 'Enable','off',...
                 'Value',0,'Position',[20,300,150,60],...
-                'callback',@pushstate);
-
+                'callback',@CVRb);
+                       
 %  Toggle button to allow user to start program again using a different
 %  method
 mp.program_again = uicontrol('Style','togglebutton',...
@@ -126,22 +129,25 @@ mp.t = uicontrol('Style','slider',...
                 'SliderStep',[0.0001,0.001],...
                 'position',[0.70 0.34 0.25 0.2],...
                 'callback',{@t_slider,mp});
-    
+            
+set(mp.f, 'MenuBar', 'none'); % remove the menu bar 
+set(mp.f, 'ToolBar', 'none'); % remove the tool bar 
+            
 waitfor(mp.menu(2),'Value'); % Wait for user to select whether they want processing or not 
 set(mp.menu(2),'Enable','off'); % Disable the processing dropdown after selection 
 
-s = strcat('data/recon/',subj.name,'/',subj.name,'_anat_brain.nii');
+s = ['data/recon/' subj.name '/' subj.name '_anat_brain.nii'];
 fname_anat = s;
 
-anat = load_nii([dir_input '/' fname_anat]); % Load the subject's 3D anatomical 
+anat = load_nii([dir_input '/' fname_anat]); % Load the subject's 3D skull stripped anatomical 
 [anat.x,anat.y,anat.z] = size(anat.img);
 
 %  CONSTRUCTING ANATOMICAL SLICES
 
-%  Initial slice position
+%  Initial slice position - values can be changed 
 anat.slice_x = 120;
 anat.slice_y = 104; 
-anat.slice_z = 30; 
+anat.slice_z = 69; 
 
 global ax_slider_value;
 ax_slider_value = anat.slice_z;
@@ -155,6 +161,7 @@ anat.zrange = (1:anat.z);
 anat.sigmin = 10; 
 anat.sigmax = 500; 
 
+%  Preparing slices to be displayed in each dimension 
 %  AXIAL slice
 anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
 anat.slice_ax = imresize(anat.slice_ax,[anat.x anat.y/anat.hdr.dime.pixdim(4)]);
@@ -182,56 +189,53 @@ set(mp.menu(3),'Enable','on'); % enable breathhold selection dropdown
 waitfor(mp.menu(3),'Value'); % wait for user response 
 set(mp.menu(3),'enable','off'); % disable stimfile selection dropdown 
 
-fileID = fopen(strcat(dir_input,'/textfiles/standard_or_custom.txt'),'r'); % read from customize_boxcar text file 
+fileID = fopen([dir_input '/textfiles/standard_or_custom.txt'],'r'); % read from customize_boxcar text file 
 format = '%d';
 standard_or_custom = fscanf(fileID,format);
 fclose(fileID);
 
-if(standard_or_custom == 1)
-    display('in here');
-    fileID = fopen(strcat(dir_input,'/textfiles/customize_boxcar.txt'),'r'); % read from customize_boxcar text file 
-    format = '%d';
-    A = fgetl(fileID);
-    B = fgetl(fileID);
-    C = fgetl(fileID);
+if(standard_or_custom == 1) % customized boxcars were created for some or all breathholds 
+    fileID = fopen([dir_input '/textfiles/customize_boxcar.txt'],'r'); % read from customize_boxcar text file 
+    A = fgetl(fileID); % BH1
+    B = fgetl(fileID); % BH2
+    C = fgetl(fileID); % HV
     fclose(fileID);
-    if A == '1'
+    if A == '1' % BH1 boxcar was customized
         bh1placeholder = 'customized';
         display('in here');
     else 
         bh1placeholder = 'standard';
-    end
-    if B == '1'
+    end 
+    if B == '1' % BH2 boxcar was customized 
         bh2placeholder = 'customized';
     else 
         bh2placeholder = 'standard';
     end
-    if C == '1'
+    if C == '1' % HV boxcar was customized 
         hvplaceholder = 'customized';
     else 
         hvplaceholder = 'standard';
     end
-else
+else % standard boxcar was selected on the process subject GUI 
     bh1placeholder = 'standard';
     bh2placeholder = 'standard';
     hvplaceholder = 'standard';
 end
 
-
-fileID = fopen(strcat(dir_input,'/textfiles/processing.txt'),'w+'); % open the file that indicates whether or not to do processing 
+fileID = fopen([dir_input '/textfiles/processing.txt'],'w+'); % open the file that indicates whether or not to do processing 
 format = '%d';
 
-if(mp.menu(2).Value == 2) % if the user chooses to do processing, write 1 to the file 
+if(mp.menu(2).Value == 2) % if the user chooses to display the processed data, write 1 to the file 
     fprintf(fileID,format,1); 
     fclose(fileID);
     display('processing');
-elseif(mp.menu(2).Value == 3) % if the user chooses not to do processing, write 0 to the file 
+elseif(mp.menu(2).Value == 3) % if the user chooses to display the raw data, write 0 to the file 
     fprintf(fileID,format,0);
     fclose(fileID);
     display('no processing');
 end
 
-if(mp.menu(3).Value==2) % specifying breathhold selection
+if(mp.menu(3).Value==2) % specifying users breathhold selection from the GUI 
     subj.breathhold = 'BH1';
     placeholder = bh1placeholder;
 elseif(mp.menu(3).Value==3)
@@ -242,9 +246,9 @@ elseif(mp.menu(3).Value==4)
     placeholder = hvplaceholder;    
 end
 
-if(mp.menu(1).Value == 2)
+if(mp.menu(1).Value == 2) % boxcar was selected as stimfile option by user on the GUI 
     if strcmp(subj.breathhold,'BH1') == 1 && strcmp(bh1placeholder,'customized') == 1
-        show_boxcar_string = 'Boxcar selection: customized';
+        show_boxcar_string = 'Boxcar selection: customized'; % indicate to the user if the boxcar for that breathhold is the standard boxcar or customized
     elseif strcmp(subj.breathhold,'BH2') == 1 && strcmp(bh2placeholder,'customized') == 1
         show_boxcar_string = 'Boxcar selection: customized';
     elseif strcmp(subj.breathhold,'BH2') == 1 && strcmp(hvplaceholder,'customized') == 1
@@ -253,41 +257,39 @@ if(mp.menu(1).Value == 2)
         show_boxcar_string = 'Boxcar selection: standard';
     end
     
-    %  Text that displays the slider/slice position
-    mp.boxcarsel = uicontrol('Style','text',...
-                            'units','normalized',...
-                            'String',show_boxcar_string,...
-                            'position',[0.15,0.54,0.7,0.05]); 
+%  Text that displays the boxcar selection (standard/customized). Shows up
+%  once the breathhold has been selected, and if pf is not selected as the
+%  stimfile
+mp.boxcarsel = uicontrol('Style','text',...
+                        'units','normalized',...
+                        'String',show_boxcar_string,...
+                        'position',[0.15,0.54,0.7,0.05]); 
 end
 
-switch(mp.menu(1).Value) 
+switch(mp.menu(1).Value) % stimfile menu selection
     case(2) % stimfile selection is boxcar 
         if (mp.menu(2).Value == 2) % processed data 
-            type = strcat(placeholder,'_boxcar'); 
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
-            fname_mapped = s2;
+            type = [placeholder '_boxcar']; 
+            functional_data = ['flirt/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         elseif(mp.menu(2).Value == 3) % raw data 
-            type = strcat(placeholder,'_boxcar_not_processed');
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
-            fname_mapped = s2;
+            type = [placeholder '_boxcar_not_processed'];
+            functional_data = ['flirt/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         end    
-        montage_info = strcat(placeholder,'_boxcar');
+        montage_info = [placeholder '_boxcar']; % variable used in make_montage.m to find the correct REDCap text file 
         
     case(3) % stimfile selection is pf 
         if (mp.menu(2).Value == 2) % processed data 
             type = 'pf';
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
-            fname_mapped = s2;
+            functional_data = ['flirt/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         elseif(mp.menu(2).Value == 3) % raw data
             type = 'pf_not_processed';
-            s2 = strcat('flirt/',type,'/',subj.name,'_',subj.breathhold,'_CVR_',subj.date,'_glm_buck_FIVE_anat_space.nii');
-            fname_mapped = s2;
+            functional_data = ['flirt/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         end    
         montage_info = 'pf';
 end
 
 %  Load the functional file that was transformed to anatomical space 
-funct.mapped_anat = load_nii([dir_input '/' fname_mapped]);
+funct.mapped_anat = load_nii([dir_input '/' functional_data]);
 
 %  DISPLAY THE SLICES IN WINDOWS
 %  AXIAL WINDOW
@@ -295,8 +297,11 @@ funct.mapped_anat = load_nii([dir_input '/' fname_mapped]);
 %  Create window to display axial slices
 ax_window.f = figure('Name', 'Axial',...
                     'Visible','on',...
-                    'Position',[50,200,600,500],...
+                    'Position',[327,750,800,850],...
                     'numbertitle','off');
+                
+set(ax_window.f, 'MenuBar', 'none'); % remove the menu bar 
+set(ax_window.f, 'ToolBar', 'none'); % remove the tool bar                
     
 %  Text that displays the slider/slice position
 ax_window.position_slider = uicontrol('Style','text',...
@@ -308,9 +313,16 @@ ax_window.position_slider = uicontrol('Style','text',...
 ax_window.drawROI = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Draw ROI',...
-                                'Value',0,'Position',[210,15,150,30],...
+                                'Value',0,'Position',[210,30,150,75],...
                                 'Callback',{@drawROI,anat,dir_input,subj,mp}); 
                             
+%  Create menu for selecting pre-determined ROI to pull the timeseries 
+ax_window.predetermined_ROI = uicontrol('Style','popupmenu',...
+                                'Visible','on',...
+                                'String',{'Pre-determined ROI','Frontal lobe','Parietal lobe','Occipital lobe','Temporal lobe','Cerebellum'},...
+                                'Position',[410,15,150,75],...
+                                'callback',{@predetermined_ROI,anat,funct,dir_input,mp,subj});
+                                                    
 %  Slider to control axial slice position                       
 ax_window.slider = uicontrol('style', 'slider',...
                             'Min',1,'Max',anat.z,'Value',anat.slice_z,... 
@@ -330,15 +342,15 @@ dimension_value_ax = 1;
 ax_window.montage_b = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Generate Montage',...
-                                'Value',0,'Position',[10,15,150,30],...
-                                'callback',{@make_montage,anat,funct,mp,type,subj,dir_input,montage_info});                          
-
-%  Create menu for selecting pre-determined ROI to pull the timeseries 
-ax.predetermined_ROI = uicontrol('Style','popupmenu',...
+                                'Value',0,'Position',[10,30,150,75],...
+                                'callback',{@make_montage,anat,funct,mp,type,subj,dir_input,montage_info});       
+                            
+%  Button to mask the white matter
+ax_window.greymatter = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
-                                'String',{'Pre-determined ROI','Frontal lobe','Parietal lobe','Occipital lobe','Temporal lobe','Cerebellum'},...
-                                'Position',[410,15,150,30]);
-
+                                'String','Mask white matter',...
+                                'Value',0,'Position',[610,30,150,75],...
+                                'callback',(@greymatter_mask));  
 % Display the axial slice 
 ax_window.image = imshow(anat.slice_ax);
 
@@ -347,9 +359,12 @@ ax_window.image = imshow(anat.slice_ax);
 %  Create window to display coronal slices
 cor_window.f = figure('Name', 'Coronal',...
         'Visible','on',...
-        'Position',[675,200,600,500],...
+        'Position',[1130,750,600,410],...
         'numbertitle','off');
 
+set(cor_window.f, 'MenuBar', 'none'); % remove the menu bar 
+set(cor_window.f, 'ToolBar', 'none'); % remove the tool bar   
+    
 %  Text that displays the slider/slice position
 cor_window.position_slider = uicontrol('Style','text',...
                                     'units','normalized',...
@@ -362,7 +377,7 @@ cor_window.slider = uicontrol('style', 'slider',...
                             'units', 'normalized',...
                             'SliderStep',[1/anat.y,10/anat.y],...
                             'position',[0.04 0.45 0.08 0.25],...
-                            'callback',{@sliderpos_cor,anat,mp,funct,cor_window});
+                            'callback',{@sliderpos_cor,anat,mp,funct,cor_window,dir_input,subj});
     
 %  Descriptive text of slider/slice position 
 cor_window.text_slider = uicontrol('Style', 'text',....
@@ -378,8 +393,11 @@ imshow(anat.slice_cor);
 %  Create window to display sagittal slices
 sag_window.f = figure('Name', 'Sagittal',...  
                     'Visible','on',...
-                    'Position',[1300,200,600,500],...
+                    'Position',[1130,208,600,410],...
                     'numbertitle','off');
+                
+set(sag_window.f, 'MenuBar', 'none'); % remove the menu bar 
+set(sag_window.f, 'ToolBar', 'none'); % remove the tool bar
 
 %  Text that displays the slider/slice position
 sag_window.position_slider = uicontrol('Style','text',...
@@ -393,7 +411,7 @@ sag_window.slider = uicontrol('style', 'slider',...
                             'units', 'normalized',...
                             'SliderStep',[1/anat.x,10/anat.x],...
                             'position',[0.04 0.45 0.08 0.25],...
-                            'callback',{@sliderpos_sag,anat,mp,funct,sag_window});
+                            'callback',{@sliderpos_sag,anat,mp,funct,sag_window,dir_input,subj});
 
 %  Descriptive text of slider/slice position    
 sag_window.text_slider = uicontrol('Style', 'text',...
