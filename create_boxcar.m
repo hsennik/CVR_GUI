@@ -1,4 +1,4 @@
-function create_boxcar(source,callbackdata,subj,dir_input,sp)
+function create_boxcar(source,callbackdata,subj,directories,gui)
 % Function to get breathhold data from user to create a customized boxcar for BH1 and BH2 - assuming that
 % the same boxcar should be used for both 
 % 
@@ -15,7 +15,7 @@ handles = guidata(source);
 
 HV = 0; %  Variable gets inputted to 'create_boxcar_textfile.m' to indicate that it is not the HV stimfile that is to be created
 
-if handles.custom(1).Value == 1
+if gui.customize_boxcar.Value == 1
 
     %  Create a new figure for boxcar customization
     cb.f = figure('Name', 'Create customized BH boxcar',...
@@ -101,7 +101,7 @@ if handles.custom(1).Value == 1
                               'String','Create Boxcar',...
                               'Enable','off',...
                               'Value',0,'Position',[350,150,150,45],...
-                              'Callback',{@create_boxcar_textfile,subj,dir_input,HV,sp});
+                              'Callback',{@create_boxcar_textfile,subj,dir_input,HV,gui});
 
     %  Create push button to view customized boxcar (user can re-enter data in
     %  fields until this button is pressed) 
