@@ -24,6 +24,7 @@ import string
 from process_fmri_functions import *
 import process_fmri_parameters
 import inspect
+from shutil import copyfile
 
 program_name = 'process_fmri.py'
 
@@ -100,11 +101,11 @@ myfile.close
 
 #  Just doing no temporal filtering for all for now
 if temporal_filtering == '1':
-	add_suffix1 = 'none'
+	add_suffix1 = 'mpe'
 elif temporal_filtering == '2':
-	add_suffix1 = 'none'
+	add_suffix1 = 'mpe'
 elif temporal_filtering == '3':
-	add_suffix1 = 'none'
+	add_suffix1 = 'mpe'
 
 with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
@@ -661,7 +662,7 @@ if __name__ == '__main__' :
                     check_and_run(sys_cmd, dir_final, fname_short + '_censor.1D', '', debug)
                 
                 
-                print '**** DONE PROCESSING - %s ****' % (fmri,)
+                print '**** DONE PROCESSING - %s ****' % (fmri,)				
 				
 if processing == '0':
 	fileName = 'REDCap_import_files/all/'+ subj + '_not_processed_parameters.txt'
