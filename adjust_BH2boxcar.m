@@ -5,5 +5,6 @@ if checkbox_click == 1
     show_axial_figure(subject,directory,main_GUI,bhselection);
 else
     close(findobj('type','figure','name','Axial Subject Data: BH2'));
+    close(findobj('type','figure','name','Timeseries: BH2'));
 end
 end
