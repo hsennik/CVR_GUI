@@ -1,4 +1,4 @@
-function create_boxcar_textfile(source,callbackdata,subj,dir_input,breath,sp,same_boxcar)
+function create_boxcar_textfile(source,callbackdata,subj,directories,main_GUI)
 % Function that creates the boxcar stimfile from user entered data
 % 
 % INPUTS 
@@ -14,21 +14,19 @@ function create_boxcar_textfile(source,callbackdata,subj,dir_input,breath,sp,sam
 %  Get data from the 'Create customized BH boxcar' figure
 handles = guidata(source);
 
-%  Set subj.breathhold based on variable HV from create_boxcar.m or
-%  create_HVboxcar.m
-
-if breath == 1
-    subj.breathhold = 'BH1';
-elseif breath == 2
-    subj.breathhold = 'BH2';
-elseif breath == 3
-    subj.breathhold = 'HV';
-end
-
-customized_stimfile = strcat(dir_input,'metadata/stim/bhonset',subj.name,'_',subj.breathhold,'_customized.1D'); % Create the textfile for the stimfile 
+customized_stimfile = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D']; % Create the textfile for the stimfile 
 fileID = fopen(customized_stimfile,'w+');
 format = '%d\n';
 display('Customized stim file generated');
+
+%  Load in the functional data that comes out of the processing pipeline,
+%  map to anatomical space and then load that nii 
+functional_data = ['data/processed/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii'];
+funct = load_nii([directories.subject '/' functional_data]);
+
+%  Check if the standard stimfiles are the correct length, adjust them if
+%  not, then copy them to metadata/stim
+funct.time = funct.hdr.dime.dim(5);
 
 % Convert all the data entry strings in to doubles and divide time blocks
 % by two to match with TR 
@@ -74,7 +72,7 @@ for i = 1:number_blocks %  Create the specified number of blocks
         halved_normal_breathing_duration = halved_normal_breathing_duration - halved_break_duration; %  remove the break duration for all block after break_after_block
     end
     for j = 1:halved_breathhold_duration
-        fprintf(fileID,format,100);
+        fprintf(fileID,format,20);
     end
     for k = 1:halved_normal_breathing_duration
         fprintf(fileID,format,0);
@@ -87,36 +85,17 @@ end
 
 fclose(fileID);
 
-if breath == 1 || breath == 2
-    % Check that all of the times add up to 370 seconds
-    % Check that blocks add up to 60 seconds 
-    total_block_time = normal_breathing_duration + breathhold_duration;
-    total_time = (number_blocks*(halved_breathhold_duration + halved_normal_breathing_duration) + halved_break_duration + halved_start_delay + standard_start + standard_end - halved_start_delay_for_end);
-    display(total_time);
-    if total_block_time ~= 60
-        errormessage = errordlg('Normal breathing duration and breathhold duration should add up to 60 seconds');
-        set(handles.viewboxcar,'Enable','off');
-    elseif total_time ~= 178
-        errormessage = errordlg('The total time is not correct, please re-enter values.');
-        set(handles.viewboxcar,'Enable','off');
-    else
-        set(handles.viewboxcar,'Enable','on'); % Enable viewboxcar pushbutton
-        set(sp.start,'Enable','on');
-    end
+% Check that all of the times add up to functional data time 
 
-end 
-
-if breath == 3
+total_block_time = normal_breathing_duration + breathhold_duration;
+total_time = (number_blocks*(halved_breathhold_duration + halved_normal_breathing_duration) + halved_break_duration + halved_start_delay + standard_start + standard_end - halved_start_delay_for_end);
+display(total_time);
+if total_time ~= funct.time
+    errormessage = errordlg('The total time does not match the functional data, please re-enter values.');
+    set(handles.viewboxcar,'Enable','off');
+else
     set(handles.viewboxcar,'Enable','on'); % Enable viewboxcar pushbutton
-    set(sp.start,'Enable','on');
-end
-        
-
-if same_boxcar == 1 %  if user selected for BH1 and BH2 boxcars to be the same 
-    subj.breathhold = 'BH2';
-    copyfile(customized_stimfile,strcat(dir_input,'metadata/stim/bhonset',subj.name,'_',subj.breathhold,'_customized.1D'),'f');
-%     set(handles.HVboxcar,'Enable','on');
-    display('boxcar copied for BH2');
-end
+    set(main_GUI.start,'Enable','on');
+end     
 
 end

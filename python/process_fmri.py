@@ -24,6 +24,7 @@ import string
 from process_fmri_functions import *
 import process_fmri_parameters
 import inspect
+from shutil import copyfile
 
 program_name = 'process_fmri.py'
 
@@ -91,20 +92,18 @@ def load_subject_list(fname_subj_list):
 # Method of determining filtering method and stimfile
 with open('textfiles/mat2py.txt', 'r') as myfile:
     temporal_filtering=myfile.readline().rstrip()
-    stimulus=myfile.readline().rstrip()
 print ('in processing pipeline')
 print temporal_filtering
-print stimulus
 
 myfile.close
 
 #  Just doing no temporal filtering for all for now
 if temporal_filtering == '1':
-	add_suffix1 = 'none'
+	add_suffix1 = 'mpe'
 elif temporal_filtering == '2':
-	add_suffix1 = 'none'
+	add_suffix1 = 'mpe'
 elif temporal_filtering == '3':
-	add_suffix1 = 'none'
+	add_suffix1 = 'mpe'
 
 with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
@@ -187,7 +186,7 @@ if __name__ == '__main__' :
     dir_recon_base = check_dir ( pinfo.dir_recon,debug)
     print pinfo.dir_recon
     if processing == '0': # Then don't do processing steps
-		pinfo.dir_processed = pinfo.dir_processed + '_not'
+		pinfo.dir_processed = pinfo.dir_dcm_base + '/data/raw'
     # if data3 != '1':
 		# pinfo.dir_processed = pinfo.dir_processed + '_' + add_suffix1
     dir_processed_base = check_dir(pinfo.dir_processed, debug)  # create base processed director
@@ -661,7 +660,7 @@ if __name__ == '__main__' :
                     check_and_run(sys_cmd, dir_final, fname_short + '_censor.1D', '', debug)
                 
                 
-                print '**** DONE PROCESSING - %s ****' % (fmri,)
+                print '**** DONE PROCESSING - %s ****' % (fmri,)				
 				
 if processing == '0':
 	fileName = 'REDCap_import_files/all/'+ subj + '_not_processed_parameters.txt'

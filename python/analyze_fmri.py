@@ -25,7 +25,6 @@ from process_fmri_functions import *
 import process_fmri_parameters
 import inspect
 import sys
-from shutil import copyfile
 
 program_name = 'analyze_fmri.py'
 
@@ -94,62 +93,48 @@ def load_subject_list(fname_subj_list):
         # create_corr_table(dir['gm_corr'], fmri_corr, dir['gm_corr'], subj + '_corr.txt', rois['gm'], debug) 
 
 # Method of determining filtering method and stimfile
-
-# with open ('filepath.txt','r') as file_for_subj_path:
-	# file_path = file_for_subj_path.readline().rstrip()
-# print file_path 
-with open('/data/hannahsennik/MATLAB/CVR_GUI/python/filepath.txt','r') as path_for_subj_files:
-	file_path = path_for_subj_files.readline().rstrip()
-with open(file_path + 'textfiles/mat2py.txt', 'r') as myfile:
-    temporal_filtering=myfile.readline().rstrip()
+with open('textfiles/stimulus.txt', 'r') as myfile:
     stimulus=myfile.readline().rstrip()
-print temporal_filtering
-print stimulus
+if stimulus == '1':
+	stimulus_suffix = 'pf'
 
 myfile.close
 
-#  Just doing no temporal filtering for all for now
-if temporal_filtering == '1':
-	add_suffix1 = 'none'
-elif temporal_filtering == '2':
-	add_suffix1 = 'none'
-elif temporal_filtering == '3':
-	add_suffix1 = 'none'
-
-if stimulus == '1':
-	add_suffix2 = 'standard_boxcar'
-elif stimulus == '2':
-	add_suffix2 = 'pf'
-elif stimulus == '3':
-	add_suffix2 = 'customized_boxcar'
-
-print add_suffix2
-
-with open(file_path + 'textfiles/processing.txt','r') as myfile2:
+with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
+myfile2.close
 
-with open(file_path + 'textfiles/standard_or_custom.txt','r') as myfile3:
-	customize = myfile3.readline().rstrip()
+with open('textfiles/standard_shifted_customized.txt','r') as myfile3:
+	boxcar_sel = myfile3.readline().rstrip()
+myfile3.close
 
-if customize == '1':
-	with open(file_path + 'textfiles/customize_boxcar.txt','r') as myfile4:
-		firstBH = myfile4.readline().rstrip()
-		secondBH = myfile4.readline().rstrip()
-		thirdBH = myfile4.readline().rstrip()
-		if firstBH == '1':
-			first_ext = '_customized'
-		else:
-			first_ext = ''
-		if secondBH == '1':
-			second_ext = '_customized'
-		else:
-			second_ext = ''
-		if thirdBH == '1':
-			third_ext = '_customized'
-		else:
-			third_ext = ''
-	print firstBH, secondBH, thirdBH
-	print first_ext, second_ext, third_ext
+with open('textfiles/stimsel.txt','r') as myfile4:
+	stimsel = myfile4.readline().rstrip()
+myfile4.close
+
+if stimsel == '2':
+	prefix = 'BH'
+elif stimsel == '3':
+	prefix = 'GA'
+
+	
+if boxcar_sel == '1':
+	tackon = ''
+	if stimulus == '2':
+		stimulus_suffix = prefix + '_standard_boxcar'
+elif boxcar_sel == '2':
+	tackon = '_shifted'
+	if stimulus == '2':
+		stimulus_suffix = prefix + '_shifted_boxcar'
+elif boxcar_sel == '3':
+	tackon = '_customized'
+	if stimulus == '2':
+		stimulus_suffix = prefix + '_customized_boxcar'
+print tackon
+print stimulus_suffix
+
+with open('textfiles/breathhold_selection.txt') as myfile:
+	breathhold_selection = myfile.readline()
 	
 if __name__ == '__main__' :
 
@@ -191,23 +176,23 @@ if __name__ == '__main__' :
     
     # Create processed directory link
     print "****** PREPARING PIPELINE DIRECTORIES ******"
-    # print('Selection:' + add_suffix1 + '_' + add_suffix2)
+    # print('Selection:' + add_suffix1 + '_' + stimulus)
     # if data3 != '1':
 		# pinfo.dir_recon = pinfo.dir_recon + '_' + add_suffix1
     dir_recon_base = check_dir ( pinfo.dir_recon,debug)
     # if data3 != '1':
-		# pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + add_suffix1 + '_' + add_suffix2
+		# pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + add_suffix1 + '_' + stimulus
     if processing == '0':
-		pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + add_suffix2 + '_not_processed'
+		pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + stimulus_suffix + '_raw'
     else:
-		pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + add_suffix2
+		pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + stimulus_suffix
     dir_analyzed_base = check_dir(pinfo.dir_analyzed, debug)  # create base processed director
     dir_analyzed = check_dir ( '%s/%s' % (pinfo.dir_analyzed, pinfo.pipeline_id),debug)
     dir_final = check_dir ('%s/final' % (dir_analyzed,),debug)
     # if data3 != '1':
 		# pinfo.dir_processed = pinfo.dir_processed + '_' + add_suffix1
     if processing == '0':
-		pinfo.dir_processed = pinfo.dir_processed + '_not'
+		pinfo.dir_processed = pinfo.dir_dcm_base + '/data/raw'
     dir_processed = check_dir ( '%s/%s' % (pinfo.dir_processed, pinfo.pipeline_id),debug)
 	
     current_date = str(datetime.datetime.now()).split(' ')[0]
@@ -237,123 +222,107 @@ if __name__ == '__main__' :
         dir_recon = pinfo.dir_recon + '/' + subj
         
         if not pinfo.concat_enable:
-            for fmri_name in info_subj[subj]['fmri']:
-                
-                # check to see if 'xxx' was entered for a run - if so, skip the run
-                if info_subj[subj]['fmri'][fmri_name].find('xxx') > -1:
-                    print 
-                    print "*** Skipping run because no dicom directory given for: ***" 
-                    print '%s' % (fmri_name)
-                
-                else:        
-					print
-					print  "**** ANALYZING fMRI - %s_%s ****" % (subj, fmri_name)
-					print fmri_name
-					dir_subj = '%s/final' % (dir_processed, )
-					print dir_subj
-					fname_fmri = '%s_%s_%s' % (subj, fmri_name, pinfo.pipeline_id)
-					fname_mask = '%s_%s_%s_mask' % (subj, fmri_name, pinfo.pipeline_id)
-					print fname_mask
-					fname_censor = '%s_%s_%s_censor.1D' % (subj, fmri_name, pinfo.pipeline_id)
-					
-                    # If censor file doesn't exist, wipe it's name, these may or may no tbe created at the end of process_fmri
-					if not os.path.exists(dir_subj + '/' + fname_censor):
-						fname_censor = ''
-					elif (hasattr(pinfo, "glm_stim_censor_enable") and pinfo.glm_stim_censor_enable):
-						fname_stim_censor = pinfo.glm_dir_stim + '/' + pinfo.glm_stim_censor
-						fname_combined_censor = dir_subj + '/' + subj + '_' + fmri_name + '_' + pinfo.pipeline_id + '_censor_stim.1D'
-						sys_cmd = ['1deval -expr "a*b" -a ' + dir_subj + '/' + fname_censor + ' -b ' + fname_stim_censor + ' > ' + fname_combined_censor]
-						process = subprocess.Popen(sys_cmd, shell=True)
-						process.communicate()
-						fname_censor = subj + '_' + fmri_name + '_' + pinfo.pipeline_id + '_censor_stim.1D'
-                    
-                        
-                    # If mask  file doesn't exist, wipe it's name, these may or may no tbe created at the end of process_fmri
-					if not os.path.exists(dir_subj + '/' + fname_mask + '.nii'):
-						fname_mask = ''
-						print 'Mask file does not exist'
-					else:
-						print 'MASK FILE PATH EXISTS'
-					
-					if pinfo.glm_enable:
-                        # Initialize stim file construction
-						stim_prefix = ''
-                        
-						if pinfo.glm_stim_model == 'ROI':    # if ROI based
-							roi_list = pinfo.glm_roi_list.split(',')
-							if pinfo.roi_type=='group':                 # Figure out ROI masks
-								fname_roi_mask = pinfo.glm_roi_fname
-							elif pinfo.roi_type =='subj':
-								fname_roi_mask = '%s_%s' % (subj, pinfo.glm_roi_fname)
-							print 'Generating ROI values - %s ' % (fname_roi_1D)
-                            # Create 1D files based on masks
-							fname_roi_1D = create_1D(pinfo.glm_roi_dir, fname_roi_mask, roi_list, \
-								dir_subj, fname_active, dir_subj, fname_roi_1D, pinfo.file_type, debug)
-							pinfo.glm_dir_stim = dir_subj
-							pinfo.glm_stim_suffix = fname_roi_1D
-                            
-						else:    # normal stimulus type    
-                            # Check stimulus naming convention
-							if pinfo.glm_stim_per_subj == 'yes':
-								stim_prefix = '%s/%s_' % (subj, subj)
-							if pinfo.glm_stim_per_run == 'yes':
-								stim_prefix = '%s%s_' % (stim_prefix, fmri_name)
-						
-						if pinfo.glm_stim_grouping == 'single' or pinfo.glm_stim_model == 'ROI':
-							for stim_name in pinfo.glm_stim_suffix.split(','):
-								fname_buck_out = '%s_%s' % (fname_fmri , stim_name.split('.')[0])
-								fname_glm_buck, fname_glm_err = create_3dDecon(dir_subj, fname_fmri, \
-									pinfo.fmri_TR, dir_analyzed_subj, fname_buck_out, dir_subj, fname_censor, \
-									dir_subj, fname_mask, '', '', '', \
-									'', '', 0, '0', \
-									pinfo.glm_dir_stim, stim_prefix, (stim_name,), pinfo.glm_stim_model, \
-									pinfo.glt_enable, pinfo.glt_dir, pinfo.glt_labels, pinfo.file_type, debug)
-						elif pinfo.glm_stim_grouping == 'all':
-							if add_suffix2 == 'standard_boxcar':
-								copyfile('/data/hannahsennik/MATLAB/CVR_GUI/python/standard_boxcar.1D',file_path + 'metadata/stim/bhonset' + subj + '_BH1.1D')
-								copyfile('/data/hannahsennik/MATLAB/CVR_GUI/python/standard_boxcar.1D',file_path + 'metadata/stim/bhonset' + subj + '_BH2.1D')
-								copyfile('/data/hannahsennik/MATLAB/CVR_GUI/python/standard_HV.1D',file_path + 'metadata/stim/bhonset' + subj + '_HV.1D')
-								pinfo.glm_stim_suffix = 'bhonset' + subj + '_' + fmri_name + '.1D'
-							elif add_suffix2 == 'pf':
-								if processing is '0':
-									pinfo.glm_stim_suffix = 'pf_' + fmri_name + '_stim_not_processed.1D'	
-								else:
-									pinfo.glm_stim_suffix = 'pf_' + fmri_name + '_stim.1D'
-							elif add_suffix2 == 'customized_boxcar':
-								print fmri_name
-								if fmri_name == 'BH1':
-									tackon = first_ext
-								elif fmri_name == 'BH2':
-									tackon = second_ext
-								elif fmri_name == 'HV':
-									tackon = third_ext
-								pinfo.glm_stim_suffix = 'bhonset' + subj + '_' + fmri_name + tackon + '.1D'
-							if fmri_name == 'BH1':
-								BH1stimfile = pinfo.glm_stim_suffix
-							elif fmri_name == 'BH2':
-								BH2stimfile = pinfo.glm_stim_suffix
-							elif fmri_name == 'HV':
-								HVstimfile = pinfo.glm_stim_suffix
-							print('The selected stimfile is: ' + pinfo.glm_stim_suffix)
-							fname_glm_buck, fname_glm_err = create_3dDecon(dir_subj, fname_fmri, \
-							pinfo.fmri_TR, dir_analyzed_subj, fname_fmri, dir_subj, fname_censor, \
-							dir_subj, fname_mask, '', '', '', \
-							'', '', 0, '0', \
-							pinfo.glm_dir_stim, stim_prefix, pinfo.glm_stim_suffix.split(','), pinfo.glm_stim_model, \
-							pinfo.glt_enable, pinfo.glt_dir, pinfo.glt_labels, pinfo.file_type, debug)
-						else:
-							raise SystemExit, 'ERROR - Improper Stimulus Group [single, group] - %s' % (pinfo.glm_stim_group)   
+
 				
-	
-                    #       Soft linking bucket into a single directory
-                    # subject directory
-					sys_cmd = 'ln -s %s/%s%s %s/%s%s' % (dir_analyzed_subj, fname_glm_buck, pinfo.file_type, \
-						dir_final, fname_glm_buck, pinfo.file_type)
-					check_and_run(sys_cmd, dir_final, fname_glm_buck, pinfo.file_type, debug)
-                    
-                    # zipping errts file
-					sys_cmd = 'gzip %s/%s%s' % (dir_analyzed_subj, fname_glm_err, pinfo.file_type)
-					check_and_run(sys_cmd, dir_analyzed_subj, fname_glm_err, pinfo.file_type + '.gz', debug)
+			fmri_name = breathhold_selection
+			
+			# check to see if 'xxx' was entered for a run - if so, skip the run
+			if info_subj[subj]['fmri'][fmri_name].find('xxx') > -1:
+				print 
+				print "*** Skipping run because no dicom directory given for: ***" 
+				print '%s' % (fmri_name)
+			
+			else:        
+				print
+				print  "**** ANALYZING fMRI - %s_%s ****" % (subj, fmri_name)
+				print fmri_name
+				dir_subj = '%s/final' % (dir_processed, )
+				print dir_subj
+				fname_fmri = '%s_%s_%s' % (subj, fmri_name, pinfo.pipeline_id)
+				fname_mask = '%s_%s_%s_mask' % (subj, fmri_name, pinfo.pipeline_id)
+				print fname_mask
+				fname_censor = '%s_%s_%s_censor.1D' % (subj, fmri_name, pinfo.pipeline_id)
+				
+				# If censor file doesn't exist, wipe it's name, these may or may no tbe created at the end of process_fmri
+				if not os.path.exists(dir_subj + '/' + fname_censor):
+					fname_censor = ''
+				elif (hasattr(pinfo, "glm_stim_censor_enable") and pinfo.glm_stim_censor_enable):
+					fname_stim_censor = pinfo.glm_dir_stim + '/' + pinfo.glm_stim_censor
+					fname_combined_censor = dir_subj + '/' + subj + '_' + fmri_name + '_' + pinfo.pipeline_id + '_censor_stim.1D'
+					sys_cmd = ['1deval -expr "a*b" -a ' + dir_subj + '/' + fname_censor + ' -b ' + fname_stim_censor + ' > ' + fname_combined_censor]
+					process = subprocess.Popen(sys_cmd, shell=True)
+					process.communicate()
+					fname_censor = subj + '_' + fmri_name + '_' + pinfo.pipeline_id + '_censor_stim.1D'
+				
+					
+				# If mask  file doesn't exist, wipe it's name, these may or may no tbe created at the end of process_fmri
+				if not os.path.exists(dir_subj + '/' + fname_mask + '.nii'):
+					fname_mask = ''
+					print 'Mask file does not exist'
+				else:
+					print 'MASK FILE PATH EXISTS'
+				
+				if pinfo.glm_enable:
+					# Initialize stim file construction
+					stim_prefix = ''
+					
+					if pinfo.glm_stim_model == 'ROI':    # if ROI based
+						roi_list = pinfo.glm_roi_list.split(',')
+						if pinfo.roi_type=='group':                 # Figure out ROI masks
+							fname_roi_mask = pinfo.glm_roi_fname
+						elif pinfo.roi_type =='subj':
+							fname_roi_mask = '%s_%s' % (subj, pinfo.glm_roi_fname)
+						print 'Generating ROI values - %s ' % (fname_roi_1D)
+						# Create 1D files based on masks
+						fname_roi_1D = create_1D(pinfo.glm_roi_dir, fname_roi_mask, roi_list, \
+							dir_subj, fname_active, dir_subj, fname_roi_1D, pinfo.file_type, debug)
+						pinfo.glm_dir_stim = dir_subj
+						pinfo.glm_stim_suffix = fname_roi_1D
+						
+					else:    # normal stimulus type    
+						# Check stimulus naming convention
+						if pinfo.glm_stim_per_subj == 'yes':
+							stim_prefix = '%s/%s_' % (subj, subj)
+						if pinfo.glm_stim_per_run == 'yes':
+							stim_prefix = '%s%s_' % (stim_prefix, fmri_name)
+					
+					if pinfo.glm_stim_grouping == 'single' or pinfo.glm_stim_model == 'ROI':
+						for stim_name in pinfo.glm_stim_suffix.split(','):
+							fname_buck_out = '%s_%s' % (fname_fmri , stim_name.split('.')[0])
+							fname_glm_buck, fname_glm_err = create_3dDecon(dir_subj, fname_fmri, \
+								pinfo.fmri_TR, dir_analyzed_subj, fname_buck_out, dir_subj, fname_censor, \
+								dir_subj, fname_mask, '', '', '', \
+								'', '', 0, '0', \
+								pinfo.glm_dir_stim, stim_prefix, (stim_name,), pinfo.glm_stim_model, \
+								pinfo.glt_enable, pinfo.glt_dir, pinfo.glt_labels, pinfo.file_type, debug)
+					elif pinfo.glm_stim_grouping == 'all':
+						if stimulus == '2':
+							pinfo.glm_stim_suffix = 'bhonset' + subj + '_' + fmri_name + tackon + '.1D'
+						elif stimulus == '1':
+							if processing is '0':
+								pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_raw.1D'	
+							else:
+								pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_processed.1D'
+						print('The selected stimfile is: ' + pinfo.glm_stim_suffix)
+						fname_glm_buck, fname_glm_err = create_3dDecon(dir_subj, fname_fmri, \
+						pinfo.fmri_TR, dir_analyzed_subj, fname_fmri, dir_subj, fname_censor, \
+						dir_subj, fname_mask, '', '', '', \
+						'', '', 0, '0', \
+						pinfo.glm_dir_stim, stim_prefix, pinfo.glm_stim_suffix.split(','), pinfo.glm_stim_model, \
+						pinfo.glt_enable, pinfo.glt_dir, pinfo.glt_labels, pinfo.file_type, debug)
+					else:
+						raise SystemExit, 'ERROR - Improper Stimulus Group [single, group] - %s' % (pinfo.glm_stim_group)   
+			
+
+				#       Soft linking bucket into a single directory
+				# subject directory
+				sys_cmd = 'ln -s %s/%s%s %s/%s%s' % (dir_analyzed_subj, fname_glm_buck, pinfo.file_type, \
+					dir_final, fname_glm_buck, pinfo.file_type)
+				check_and_run(sys_cmd, dir_final, fname_glm_buck, pinfo.file_type, debug)
+				
+				# zipping errts file
+				sys_cmd = 'gzip %s/%s%s' % (dir_analyzed_subj, fname_glm_err, pinfo.file_type)
+				check_and_run(sys_cmd, dir_analyzed_subj, fname_glm_err, pinfo.file_type + '.gz', debug)
         
         else:
             # concatenate all runs into one file, then run same processes
@@ -584,7 +553,7 @@ if __name__ == '__main__' :
                 sys_cmd = 'gzip %s/%s%s' % (dir_analyzed_subj, fname_glm_err, pinfo.file_type)
                 check_and_run(sys_cmd, dir_analyzed_subj, fname_glm_err, pinfo.file_type + '.gz', debug)
             
-fileName = 'REDCap_import_files/all/'+ subj + '_' + add_suffix2 + '_analyzed_parameters.txt'				
+fileName = 'REDCap_import_files/all/'+ subj + '_' + stimulus_suffix + '_analyzed_parameters.txt'				
 with open(fileName,'w') as thefile:
 	thefile.write('dir_dcm_base,' + pinfo.dir_dcm_base + ',Base Directory\n')
 	thefile.write('dir_analyzed,' + pinfo.dir_analyzed + ',Analyzed Directory\n')
@@ -594,9 +563,7 @@ with open(fileName,'w') as thefile:
 	thefile.write('pipeline_order,' + process_order + ',Order of processing\n')
 	thefile.write('glm_dir_stim,' + pinfo.glm_dir_stim + ',Stimulus File Directory\n')
 	thefile.write('glm_stim_model,' + pinfo.glm_stim_model + ',Stimulus Model Type\n')
-	thefile.write('glm_stim_suffix BH1,' + BH1stimfile + ',BH1 Stim File Selection\n')
-	thefile.write('glm_stim_suffix BH2,' + BH2stimfile + ',BH2 Stim File Selection\n')
-	thefile.write('glm_stim_suffix HV,' + HVstimfile + ',HV Stim File Selection\n')
+	thefile.write('glm_stim_suffix,' + pinfo.glm_stim_suffix + ',' + fmri_name + ' Stim File Selection\n')
 thefile.close
             
             

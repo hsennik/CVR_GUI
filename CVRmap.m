@@ -1,4 +1,4 @@
-function CVRmap(dimension,anat,funct,mp,sliceval,det_functionality,gen_file_location)
+function CVRmap(dimension,anat,funct,mp,sliceval,det_functionality,gen_file_location,mask_name)
 % Function to generate CVR map 
 % 
 % INPUTS 
@@ -52,25 +52,27 @@ if det_functionality == 1 %  if the montage button is pressed
     slice = sliceval; %  the slice is increased in increments of six to create a montage of 25 axial slices 
     display(slice);
     display('first');
-elseif det_functionality == 2
+elseif det_functionality == 2 %  if just need to overlay regular CVR map 
     slice = slice + floor(sliderval - slice);
     display('second');
-else
+end
+
+if strcmp(mask_name,'') == 0 && strcmp(mask_name,'None') == 0
     ROImask = 1;
-    display('third');
+    display('masked');
     slice = floor(ax_slider_value);
 end
 
 %  Anatomical data 
 if strcmp(dimension,'axial') == 1
     updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
-    updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(4)]);
+    updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(1)]);
 elseif strcmp(dimension,'coronal') == 1
     updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
-    updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
+    updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
 elseif strcmp(dimension,'saggital') == 1
     updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
-    updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
+    updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
 end
 updated_slice = rot90(updated_slice(range1,range2,:)); % Rotate and flip the slice so that it is displayed correctly to the user 
 updated_slice = flip(updated_slice,2);
@@ -78,17 +80,32 @@ updated_slice = flip(updated_slice,2);
 %  Functional data 
 if strcmp(dimension,'axial') == 1
     funct.mask = double(imresize(squeeze(funct.mapped_anat.img(:,:,slice)),[dim1 dim2],'nearest'));
-    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(4)]);
+    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(1)]);
 elseif strcmp(dimension,'coronal') == 1
     funct.mask = double(imresize(squeeze(funct.mapped_anat.img(:,slice,:)),[dim1 dim2],'nearest'));
-    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
+    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
 elseif strcmp(dimension,'saggital') == 1
     funct.mask = double(imresize(squeeze(funct.mapped_anat.img(slice,:,:)),[dim1 dim2],'nearest'));
-    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
+    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
 end
 
 funct.mask = rot90(funct.mask(range1,range2,:));
 funct.mask = flip(funct.mask,2);
+
+if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
+    masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+    masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
+    masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
+    masked_slice = flip(masked_slice,2);
+    
+    if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
+        level = 0;
+    else
+        level = 0.15;
+    end
+    BW = im2bw(masked_slice,level);
+    funct.mask = funct.mask.*BW;
+end
 
 thresh_indices = find (funct.mask < (max(funct.mask(:))-0.0000001)); % find all indices that contain the values specified
 thresh_vec = reshape (funct.mask, [(size(funct.mask,1)*size(funct.mask,2)) 1]); % turn 3D array into vector 
@@ -121,7 +138,7 @@ AUTO = 1;
 if AUTO == 1
     norm_denom = max(abs(neg_diff), abs(pos_diff)); %  Take the max difference to use as normalization denominator 
 else
-    norm_denom = user_input; %  Allow for user input of normalization denominator 
+    norm_denom = user_input; %  Allow for user input of normalization denominator (not added in yet)
 end
 
 %  Normalize the values to be between 0 and 1 
@@ -137,11 +154,27 @@ greenImg(negative) = normalized_negative;
 blueImg(positive) = 0;
 blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
 
-if ROImask == 1 && strcmp(dimension,'axial') == 1
-    redImg = redImg + det_functionality;
-    greenImg = greenImg + det_functionality;
-    blueImg = blueImg + det_functionality;
-end
+% if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
+%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+%     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
+%     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
+%     masked_slice = flip(masked_slice,2);
+%     
+%     if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
+%         level = 0;
+%     else
+%         level = 0.15;
+%     end
+%     BW = im2bw(masked_slice,level);
+% %     
+% %     %  Get the edge of the region 
+% %     masked_slice = edge(double(det_functionality(:,:,slice)),'Canny');
+% %     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
+% %     masked_slice = flip(masked_slice,2);   
+%     redImg = redImg.*BW;
+%     greenImg = greenImg.*BW;
+%     blueImg = blueImg.*BW;
+% end
 
 rgbImage = cat(3,redImg,greenImg,blueImg); %  concatenate the red, green, and blue images 
 
