@@ -1,4 +1,4 @@
-function show_axial_figure(subj,directories,main_GUI,bhselection)
+function show_axial_figure(subj,directories,main_GUI)
 % Function to show the axial slices in a figure so that the user can select
 % an ROI and pull the timeseries. This is used so that they can find the
 % general peaks and troughs of the data and adjust the boxcar if needed.
@@ -13,7 +13,10 @@ function show_axial_figure(subj,directories,main_GUI,bhselection)
 % Original Creation Date - July 13, 2016
 % Author - Hannah Sennik
 
-subj.breathhold = bhselection; % breathhold selection
+close(findobj('type','figure','name',['Axial Subject Data: ' subj.breathhold]));
+close(findobj('type','figure','name',['Timeseries vs. Customized Boxcar: ' subj.breathhold]));
+close(findobj('type','figure','name',['Create customized boxcar for: ' subj.breathhold]));
+close(findobj('type','figure','name',['Timeseries: ' subj.breathhold]));
 
 GUI = 1; % indicates to slider_position.m which GUI the slider belongs to - processing GUI (1) OR viewing GUI (2)
 
@@ -58,67 +61,42 @@ funct = load_nii([directories.subject '/' functional_data]);
 %  not, then copy them to metadata/stim
 funct.time = funct.hdr.dime.dim(5);
 
-standard_boxcar = [directories.matlabdir '/python/standard_boxcar.1D'];
-standard_HV = [directories.matlabdir '/python/standard_HV.1D'];
-stim_BH1 = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_BH1.1D'];
-stim_BH2 = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_BH2.1D'];
-stim_HV = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_HV.1D'];
+if strcmp(subj.breathhold,'HV') == 1
+    boxcar = [directories.matlabdir '/python/standard_HV.1D'];
+else
+    boxcar = [directories.matlabdir '/python/standard_boxcar.1D'];
+end
 
-fileID = fopen(standard_boxcar, 'rt');
-assert(fileID ~= -1, 'Could not read: %s', standard_boxcar);
+copy_stim = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'];
+
+fileID = fopen(boxcar, 'rt');
+assert(fileID ~= -1, 'Could not read: %s', boxcar);
 x = onCleanup(@() fclose(fileID));
 count = 0;
 while ~feof(fileID)
     count = count + sum( fread( fileID, 16384, 'char' ) == char(10) );
 end
 
-fileID = fopen(standard_boxcar, 'r');
+fclose(fileID);
+
+fileID = fopen(boxcar, 'r');
 if(count > funct.time)
     for i = 1:abs(count - funct.time)
         fgetl(fileID);
     end
     buffer = fread(fileID,Inf);
     fclose(fileID);
-    fileID = fopen(stim_BH1,'w+');
-    fwrite(fileID,buffer);
-    fclose(fileID);
-    copyfile(stim_BH1,stim_BH2,'f');    
-elseif(count < funct.time)
-    copyfile(standard_boxcar,stim_BH1,'f');
-    fileID = fopen(stim_BH1,'a');
-    for i = 1:abs(funct.time - count)
-        fprintf(fileID,format,0);
-    end
-    fclose(fileID);   
-end
-
-fileID = fopen(standard_HV, 'rt');
-assert(fileID ~= -1, 'Could not read: %s', standard_HV);
-x = onCleanup(@() fclose(fileID));
-count = 0;
-while ~feof(fileID)
-    count = count + sum( fread( fileID, 16384, 'char' ) == char(10) );
-end
-
-fileID = fopen(standard_HV, 'r');
-if(count > funct.time)
-    for i = 1:abs(count - funct.time)
-        fgetl(fileID);
-    end
-    buffer = fread(fileID,Inf);
-    fclose(fileID);
-    fileID = fopen(stim_HV,'w+');
+    fileID = fopen(copy_stim,'w+');
     fwrite(fileID,buffer);
     fclose(fileID);  
 elseif(count < funct.time)
-    copyfile(standard_boxcar,stim_HV,'f');
-    fileID = fopen(stim_HV,'a');
+    copyfile(boxcar,copy_stim,'f');
+    fileID = fopen(copy_stim,'a');
     for i = 1:abs(funct.time - count)
         fprintf(fileID,format,0);
     end
     fclose(fileID);   
 end
-
 
 %  Create the entire interface panel
 axial.f = figure('Name', ['Axial Subject Data: ' subj.breathhold],...
@@ -128,40 +106,46 @@ axial.f = figure('Name', ['Axial Subject Data: ' subj.breathhold],...
 set(axial.f, 'MenuBar', 'none'); % remove the menu bar 
 set(axial.f, 'ToolBar', 'none'); % remove the tool bar  
 
+if main_GUI.boxcar(2).Value == 1
+    userprompt_string = 'adjust the standard boxcar';
+elseif main_GUI.boxcar(3).Value == 1
+    userprompt_string = 'create a customized boxcar';
+end
+
 axial.userprompt = uicontrol('Style','text',...
                     'units','normalized',...
                     'Position',[0.05,0.9,0.9,0.1],...
-                    'String',['Please specify an ROI to extract the ' subj.breathhold ' timeseries and adjust the standard boxcar or create a new one']);
+                    'String',['Please specify an ROI to extract the ' subj.breathhold ' timeseries and ' userprompt_string]);
 
 %  Text that displays the slider/slice position
-ax_window.position_slider = uicontrol('Style','text',...
+axial.position_slider = uicontrol('Style','text',...
                                     'units','normalized',...
                                     'String',anat.slice_z,...
                                     'position',[0.03 0.22 0.1 0.15]);   
 
 %  Button to draw ROI and graph the timeseries 
-ax_window.drawROI = uicontrol('Style','pushbutton',...
+axial.drawROI = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Draw ROI',...
                                 'Value',0,'Position',[100,5,100,40],...
-                                'Callback',{@drawROI_copy,anat,directories,subj,ax_window,bhselection,funct}); 
+                                'Callback',{@drawROI_copy,anat,directories,subj,main_GUI,subj,funct}); 
 
 %  Slider to control axial slice position                       
-ax_window.slider = uicontrol('style', 'slider',...
+axial.slider = uicontrol('style', 'slider',...
                             'Min',1,'Max',anat.z,'Value',anat.slice_z,... 
                             'units', 'normalized',...
                             'SliderStep',[1/anat.z,10/anat.z],...
                             'position',[0.04 0.45 0.08 0.25],...
-                            'callback',{@sliderpos_ax,anat,main_GUI,funct,ax_window,directories,subj,GUI});
+                            'callback',{@sliderpos_ax,anat,main_GUI,funct,axial,directories,subj,GUI});
 
 %  Descriptive text of slider/slice position    
-ax_window.text_slider = uicontrol('Style', 'text',...
+axial.text_slider = uicontrol('Style', 'text',...
                                 'units', 'normalized',...
                                 'position', [0.03 0.73 0.1 0.15],...
                                 'String', 'Axial Slice Position');
 
 %  Button to close the windows
-ax_window.closewindows = uicontrol('Style','pushbutton',...
+axial.closewindows = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String',['Done adjusting boxcar for: ' subj.breathhold],...
                                 'Value',0,'Position',[270,5,250,40],...
