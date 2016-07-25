@@ -1,4 +1,4 @@
-function sliderpos_sag(source,callbackdata,anat,mp,funct,sag_window,dir_input,subj)
+function sliderpos_sag(source,callbackdata,anat,mp,funct,sag_window,directories,subj,GUI)
 % Function to update the sagittal slice displayed based on the sagittal slider position 
 % 
 % INPUTS 
@@ -15,6 +15,7 @@ global sag_slider_value;
 sag_slider_value = get(source, 'Value'); % get the value of the slider position
 display(sag_slider_value);
 set(sag_window.position_slider,'String',floor(sag_slider_value)); % Display the updated slider value in the sagittal slice window 
-slider_position('saggital',anat,mp,funct,sag_window,dir_input,subj);
+mask_name = '';
+slider_position('saggital',anat,mp,funct,sag_window,directories,subj,GUI,mask_name);
 
 end

@@ -15,9 +15,13 @@ function CVRmap_for_montage(anat,funct,mp,sliceval,gen_file_location)
 %       A - 2016-07-11 - Moved the CVRmap generation to CVRmap.m to avoid
 %                        duplication of code
 
+
+% temp_name = handles.predetermined_ROI.String(handles.predetermined_ROI.Value);
+% mask_name = temp_name{1}; % get the mask name
+mask_name = '';
 dimension = 'axial'; % if montage button is pressed, want montage of axial CVR maps
 montage = 1; % set montage variable to 1 to execute montage functionality in CVRmap.m
-CVRmap(dimension,anat,funct,mp,sliceval,montage,gen_file_location); % call the CVRmap function
+CVRmap(dimension,anat,funct,mp,sliceval,montage,gen_file_location,mask_name); % call the CVRmap function
 
 end
 

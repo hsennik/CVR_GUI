@@ -92,10 +92,8 @@ def load_subject_list(fname_subj_list):
 # Method of determining filtering method and stimfile
 with open('textfiles/mat2py.txt', 'r') as myfile:
     temporal_filtering=myfile.readline().rstrip()
-    stimulus=myfile.readline().rstrip()
 print ('in processing pipeline')
 print temporal_filtering
-print stimulus
 
 myfile.close
 

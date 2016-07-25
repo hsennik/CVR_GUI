@@ -1,4 +1,4 @@
-function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input,montage_info)
+function make_montage(source,callbackdata,anat,funct,mp,type,subj,directories,montage_info)
 % Function to make montage from saved axial slice images 
 % 
 % INPUTS 
@@ -7,16 +7,17 @@ function make_montage(source,callbackdata,anat,funct,mp,type,subj,dir_input,mont
 %     mp - GUI data
 %     type - type of processing and stimfile 
 %     subj - subject data (name,date,breathhold)
-%     dir_input - main subject directory 
+%     directories - strings for all relevant directories
 %     montage_info - to be used in final filename for montage 
 %
 % *************** REVISION INFO ***************
 % Original Creation Date - June 27, 2016
 % Author - Hannah Sennik
 
+handles = guidata(source);
 %  Create directory to hold all images that will create the montage
-mkdir([dir_input '/montage/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/']);
-gen_file_location = [dir_input '/montage/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/'];
+mkdir(directories.subject,[directories.montagedir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/']);
+gen_file_location = [directories.subject '/' directories.montagedir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/'];
 
 %  For loop to cycle through calling the function to save CVR slices
 %  as jpg
@@ -40,22 +41,23 @@ set(mp.f, 'ToolBar', 'none'); % remove the tool bar
 mymontage = montage(fileNames, 'Size', [5 5]);
 
 %  Create directory for clinician to view final montage
-mkdir(dir_input,'/clinician_final/');
+directories.cliniciandir = 'clinician_final';
+mkdir(directories.subject,['/' directories.cliniciandir '/']);
 
 %  Write the montage to the clinician file
-imwrite(mymontage.CData,strcat(dir_input,'/clinician_final/',subj.name,'_',subj.breathhold,'_',type,'_',mp.t_number.String,'_final_montage.jpg')); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
+imwrite(mymontage.CData,[directories.subject '/' directories.cliniciandir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '_final_montage.jpg']); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
 
 %  Display the montage in the montage window
 display('Montage saved');
 
 %  If clinician generates a montage, move the parameter data used for that
 %  montage to a the final REDCap folder
-mkdir('REDCap_import_files/final');
+mkdir([directories.subject, '/' directories.REDCapdir '/final']);
 if strcmp(mp.menu(2).String(mp.menu(2).Value),'yes') == 1 % user selected processed data on main GUI
-    copyfile(strcat('REDCap_import_files/all/',subj.name,'_processed_parameters.txt'),'REDCap_import_files/final/','f');
+    copyfile([directories.subject '/' directories.REDCapdir '/all/' subj.name '_processed_parameters.txt'],[directories.subject '/' directories.REDCapdir '/final/' subj.name '_processed_parameters.txt'],'f');
 else % raw data 
-    copyfile(strcat('REDCap_import_files/all/',subj.name,'_not_processed_parameters.txt'),'REDCap_import_files/final/','f');
+    copyfile([directories.REDCapdir '/all/' subj.name '_not_processed_parameters.txt'],[directories.REDCapdir '/final/'],'f');
 end
-copyfile(strcat('REDCap_import_files/all/',subj.name,'_',montage_info,'_analyzed_parameters.txt'),'REDCap_import_files/final/','f');
+copyfile([directories.subject '/' directories.REDCapdir '/all/' subj.name '_' montage_info '_analyzed_parameters.txt'],[directories.subject '/' directories.REDCapdir '/final/' subj.name '_' montage_info '_analyzed_parameters.txt'],'f');
 
 end

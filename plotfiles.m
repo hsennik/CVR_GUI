@@ -1,19 +1,25 @@
 function plotfiles(directories,subj,mp,timeseries_plot,region)
 
-fileID = fopen([directories.textfilesdir '/standard_or_custom.txt'],'r'); % open the customize boxcar file
+fileID = fopen([directories.textfilesdir '/standard_shifted_customized.txt'],'r'); % open the customize boxcar file
 format = '%d';
 custom_val = fscanf(fileID,format);     
 
 % Determine which stimfile was used so that it can be displayed with the
 % timeseries 
-if(mp.menu(1).Value == 2)
-    if custom_val == 1 && strcmp(mp.boxcarsel.String,'Boxcar selection: customized') == 1
-        stim = [directories.matlabdir '/python/standard_HV.1D'];
-    else
-        stim = [directories.matlabdir '/python/standard_HV.1D'];
+if(mp.menu(1).Value == 2) % boxcar
+    if custom_val == 1
+        stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'];
+    elseif custom_val == 2
+        stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_shifted.1D'];
+    elseif custom_val == 3
+        stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D'];
     end
 elseif(mp.menu(1).Value == 3)
-    stim = [directories.metadata '/stim/pf_',subj.breathhold,'_stim.1D'];
+    if mp.menu(2).Value == 2
+        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+    elseif mp.menu(2).Value == 3
+        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+    end
 end
 
 ts = figure('Name',['Timeseries from 3D ROI: ' region],...
