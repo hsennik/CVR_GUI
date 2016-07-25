@@ -183,7 +183,7 @@ anat.zrange = (1:anat.z);
 
 %  Adjusting the contrast of the anatomical scans (shrink the window of the range of values)
 anat.sigmin = 10; 
-anat.sigmax = 500; 
+anat.sigmax = 300; % make this user driven (used to be 500)
 
 %  Preparing slices to be displayed in each dimension 
 %  AXIAL slice
@@ -218,12 +218,23 @@ format = '%d';
 standard_shifted_custom = fscanf(fileID,format);
 fclose(fileID);
 
+fileID = fopen([directories.subject '/textfiles/stimsel.txt'],'r');
+format = '%d\n';
+stimsel = fscanf(fileID,format);
+fclose(fileID);
+
+if stimsel == 2
+    prefix = 'BH';
+elseif stimsel == 3
+    prefix = 'GA';
+end
+
 if(standard_shifted_custom == 1) % customized boxcars were created for some or all breathholds 
-    placeholder = 'standard';
+    placeholder = [prefix '_standard'];
 elseif standard_shifted_custom == 2
-    placeholder = 'shifted';
+    placeholder = [prefix '_shifted'];
 elseif standard_shifted_custom == 2
-    placeholder = 'customized';
+    placeholder = [prefix '_customized'];
 end
 
 fileID = fopen([directories.subject '/textfiles/processing.txt'],'w+'); % open the file that indicates whether or not to do processing 

@@ -87,6 +87,7 @@ sp.stimulus_selection = uicontrol('Style','popupmenu',...
                             'Position',[50,650,200,25]);   
                         
 waitfor(sp.stimulus_selection,'Value');
+set(sp.stimulus_selection,'Enable','off');
 
 if sp.stimulus_selection.Value == 2 || sp.stimulus_selection.Value == 3
     if sp.stimulus_selection.Value == 2

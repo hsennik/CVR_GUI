@@ -13,18 +13,31 @@ mkdir([directories.subject '/' directories.flirtdir '/pf_raw']);
 fileID = fopen([directories.textfilesdir '/standard_shifted_customized.txt'],'w+');
 format = '%d\n';
 
-if main_GUI.boxcar(1).Value == 1 % standard boxcar was selected for breathhold
-    fprintf(fileID,format,1);
-    boxcar_destination = 'standard_boxcar';
-    fclose(fileID);
-elseif main_GUI.boxcar(2).Value == 1 % shifted boxcar was selected for breathhold 
-    fprintf(fileID,format,2);
-    boxcar_destination = 'shifted_boxcar';
-    fclose(fileID);
-elseif main_GUI.boxcar(3).Value == 1 % customized boxcar was selected for breathhold
-    fprintf(fileID,format,3);
-    boxcar_destination = 'customized_boxcar';
-    fclose(fileID);
+if main_GUI.stimulus_selection.Value == 2 || main_GUI.stimulus_selection.Value == 3
+
+    if main_GUI.stimulus_selection.Value == 2
+        add_prefix = 'BH';
+    elseif main_GUI.stimulus_selection.Value == 3
+        add_prefix = 'GA';
+    end
+    if main_GUI.boxcar(1).Value == 1 % standard boxcar was selected for breathhold
+        fprintf(fileID,format,1);
+        boxcar_destination = [add_prefix '_standard_boxcar'];
+        fclose(fileID);
+    elseif main_GUI.boxcar(2).Value == 1 % shifted boxcar was selected for breathhold 
+        fprintf(fileID,format,2);
+        boxcar_destination = [add_prefix '_shifted_boxcar'];
+        fclose(fileID);
+    elseif main_GUI.boxcar(3).Value == 1 % customized boxcar was selected for breathhold
+        fprintf(fileID,format,3);
+        boxcar_destination = [add_prefix '_customized_boxcar'];
+        fclose(fileID);
+    end
+    
+elseif main_GUI.stimulus_selection.Value == 4
+    boxcar_destination = 'bellows';
+elseif main_GUI.stimulus_selection.Value == 5
+    boxcar_destination = 'CO2';
 end
 
 mkdir([directories.subject '/' directories.flirtdir '/' boxcar_destination]);
@@ -40,10 +53,10 @@ format = '%d\n';
 fprintf(fileID,format,1); % 1 indicates pf stimulus (always do this one)
 fclose(fileID);
 
-stimulus_number = 2; % for now it is just pf and boxcar (later have more)
+stimulus_number = 2; % for now it is just pf and (boxcar,GA,bellows,or CO2 - only one of these at a time) (later have more)
 
-for stimulus=1:stimulus_number %  First for loop goes through  stimfile selections
-    for processed = 1:2 % Second for loop goes analyzes processed and then unprocessed data
+for stimulus=1:stimulus_number %  First for loop goes through stimfile selections
+    for processed = 1:2 % Second for loop analyzes processed and then unprocessed data
       
         display(stimulus);
         display(processed);
@@ -55,7 +68,7 @@ for stimulus=1:stimulus_number %  First for loop goes through  stimfile selectio
             destination_name_P = 'processed';
             fprintf(fileID,format,1); 
         elseif processed == 2
-            destination_name_P = 'processed_not';
+            destination_name_P = 'raw';
             fprintf(fileID,format,0);
         end
         fclose(fileID);
@@ -192,6 +205,8 @@ mkdir([directories.flirtdir '/standard_to_anat']);
 %  saved in recon ..?
 command = ['flirt -in ' directories.matlabdir '/standard_files/avg152T1_brain.nii.gz -ref data/recon/' subj.name '/' subj.name '_anat_brain.nii -out ' directories.flirtdir '/standard_to_anat/standard_brain_to_anat.nii -omat ' directories.flirtdir '/standard_to_anat/standard_brain_to_anat.mat -dof 12'];
 status = system(command);
+% command = ['fnirt -in ' directories.matlabdir '/standard_files/avg152T1_brain.nii.gz -aff ' directories.flirtdir '/standard_to_anat/standard_brain_to_anat.mat -cout ' directories.flirtdir '/standard_to_anat/nonlinear_transform'];
+% status = system(command);
 
 %  Map each of the regions to anatomical space here as well and save to
 %  flirt/standard_to_anat

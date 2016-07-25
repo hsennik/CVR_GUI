@@ -92,27 +92,26 @@ end
 funct.mask = rot90(funct.mask(range1,range2,:));
 funct.mask = flip(funct.mask,2);
 
-% if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
-%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
-%     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
-%     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
-%     masked_slice = flip(masked_slice,2);
-%     
-%     if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
-%         level = 0;
-%     else
-%         level = 0.15;
-%     end
-%     BW = im2bw(masked_slice,level);
-%     funct.mask = funct.mask.*BW;
-% end
+if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
+    masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+    masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
+    masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
+    masked_slice = flip(masked_slice,2);
+    
+    if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
+        level = 0;
+    else
+        level = 0.15;
+    end
+    BW = im2bw(masked_slice,level);
+    funct.mask = funct.mask.*BW;
+end
 
 thresh_indices = find (funct.mask < (max(funct.mask(:))-0.0000001)); % find all indices that contain the values specified
 thresh_vec = reshape (funct.mask, [(size(funct.mask,1)*size(funct.mask,2)) 1]); % turn 3D array into vector 
 thresh_values = thresh_vec(thresh_indices); % place the values at specified array indices in to another array
 
 %  Splitting anatomical in to three colour channels 
-%  DO I NEED TO SWITCH RED AND BLUE?? 
 redImg = updated_slice(:,:,1);
 greenImg = updated_slice(:,:,2);
 blueImg = updated_slice(:,:,3);
@@ -139,7 +138,7 @@ AUTO = 1;
 if AUTO == 1
     norm_denom = max(abs(neg_diff), abs(pos_diff)); %  Take the max difference to use as normalization denominator 
 else
-    norm_denom = user_input; %  Allow for user input of normalization denominator 
+    norm_denom = user_input; %  Allow for user input of normalization denominator (not added in yet)
 end
 
 %  Normalize the values to be between 0 and 1 
@@ -155,27 +154,27 @@ greenImg(negative) = normalized_negative;
 blueImg(positive) = 0;
 blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
 
-if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
-    masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
-    masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
-    masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
-    masked_slice = flip(masked_slice,2);
-    
-    if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
-        level = 0;
-    else
-        level = 0.15;
-    end
-    BW = im2bw(masked_slice,level);
-%     
-%     %  Get the edge of the region 
-%     masked_slice = edge(double(det_functionality(:,:,slice)),'Canny');
+% if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
+%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+%     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
 %     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
-%     masked_slice = flip(masked_slice,2);   
-    redImg = redImg.*BW;
-    greenImg = greenImg.*BW;
-    blueImg = blueImg.*BW;
-end
+%     masked_slice = flip(masked_slice,2);
+%     
+%     if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
+%         level = 0;
+%     else
+%         level = 0.15;
+%     end
+%     BW = im2bw(masked_slice,level);
+% %     
+% %     %  Get the edge of the region 
+% %     masked_slice = edge(double(det_functionality(:,:,slice)),'Canny');
+% %     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
+% %     masked_slice = flip(masked_slice,2);   
+%     redImg = redImg.*BW;
+%     greenImg = greenImg.*BW;
+%     blueImg = blueImg.*BW;
+% end
 
 rgbImage = cat(3,redImg,greenImg,blueImg); %  concatenate the red, green, and blue images 
 

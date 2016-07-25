@@ -102,22 +102,34 @@ myfile.close
 
 with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
+myfile2.close
 
 with open('textfiles/standard_shifted_customized.txt','r') as myfile3:
 	boxcar_sel = myfile3.readline().rstrip()
+myfile3.close
 
+with open('textfiles/stimsel.txt','r') as myfile4:
+	stimsel = myfile4.readline().rstrip()
+myfile4.close
+
+if stimsel == '2':
+	prefix = 'BH'
+elif stimsel == '3':
+	prefix = 'GA'
+
+	
 if boxcar_sel == '1':
 	tackon = ''
 	if stimulus == '2':
-		stimulus_suffix = 'standard_boxcar'
+		stimulus_suffix = prefix + '_standard_boxcar'
 elif boxcar_sel == '2':
 	tackon = '_shifted'
 	if stimulus == '2':
-		stimulus_suffix = 'shifted_boxcar'
+		stimulus_suffix = prefix + '_shifted_boxcar'
 elif boxcar_sel == '3':
 	tackon = '_customized'
 	if stimulus == '2':
-		stimulus_suffix = 'customized_boxcar'
+		stimulus_suffix = prefix + '_customized_boxcar'
 print tackon
 print stimulus_suffix
 
@@ -180,7 +192,7 @@ if __name__ == '__main__' :
     # if data3 != '1':
 		# pinfo.dir_processed = pinfo.dir_processed + '_' + add_suffix1
     if processing == '0':
-		pinfo.dir_processed = pinfo.dir_processed + '_not'
+		pinfo.dir_processed = pinfo.dir_dcm_base + '/data/raw'
     dir_processed = check_dir ( '%s/%s' % (pinfo.dir_processed, pinfo.pipeline_id),debug)
 	
     current_date = str(datetime.datetime.now()).split(' ')[0]
@@ -288,7 +300,7 @@ if __name__ == '__main__' :
 							pinfo.glm_stim_suffix = 'bhonset' + subj + '_' + fmri_name + tackon + '.1D'
 						elif stimulus == '1':
 							if processing is '0':
-								pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_processed_not.1D'	
+								pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_raw.1D'	
 							else:
 								pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_processed.1D'
 						print('The selected stimfile is: ' + pinfo.glm_stim_suffix)

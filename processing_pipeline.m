@@ -30,6 +30,9 @@ format = '%d\n';
 fprintf(fileID,format,1); % do processing 
 fclose(fileID);
 
+fileID = fopen([directories.subject '/' directories.textfilesdir '/stimsel.txt'],'w+');
+format = '%d\n';
+
 if main_GUI.stimulus_selection.Value == 2 || main_GUI.stimulus_selection.Value == 3
 
     number_of_first = str2num(main_GUI.specify_first_textbox.String);
@@ -38,9 +41,11 @@ if main_GUI.stimulus_selection.Value == 2 || main_GUI.stimulus_selection.Value =
     if main_GUI.stimulus_selection.Value == 2
         first_string = 'BH';
         second_string = 'HV';
+        fprintf(fileID,format,2);
     elseif main_GUI.stimulus_selection.Value == 3
         first_string = 'CVR';
-        second_string = 'SENS BOTH HANDS';
+        second_string = 'SENS_BOTH';
+        fprintf(fileID,format,3);
     end
 
     C{1,1} = '';
@@ -79,10 +84,18 @@ if main_GUI.stimulus_selection.Value == 2 || main_GUI.stimulus_selection.Value =
             end
         end
     elseif main_GUI.stimulus_selection.Value == 3
-        C{1,i+j+2} = 'SENS RIGHT';
-        C{1,i+j+3} = 'SENS LEFT';
+        C{1,i+j+2} = 'SENS_RIGHT';
+        C{1,i+j+3} = 'SENS_LEFT';
     end
+elseif main_GUI.stimulus_selection.Value == 4
+    C = {'','BELLOWS'};
+    fprintf(fileID,format,4);
+elseif main_GUI.stimulus_selection.Value == 5
+    C = {'','CO2'};
+    fprintf(fileID,format,5);
 end
+
+fclose(fileID);
 
 %  Tell the user to wait for the subject to be processed
 main_GUI.userprompt = uicontrol('Style','text',...
@@ -91,19 +104,19 @@ main_GUI.userprompt = uicontrol('Style','text',...
                     'String','Please wait while the subject is being processed');
 
 pause(2);
-% 
-% %  Run the processing pipeline with all steps
-% command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR_' subj.name '.txt --clean'];
-% status = system(command);
-% 
-% fileID = fopen([directories.subject '/' directories.textfilesdir '/processing.txt'],'w+');
-% format = '%d\n';
-% fprintf(fileID,format,0); % no processing 
-% fclose(fileID);
-% 
-% %  Run the processing pipeline and skip steps 
-% command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR_' subj.name '.txt --clean'];
-% status = system(command);
+
+%  Run the processing pipeline with all steps
+command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR_' subj.name '.txt --clean'];
+status = system(command);
+
+fileID = fopen([directories.subject '/' directories.textfilesdir '/processing.txt'],'w+');
+format = '%d\n';
+fprintf(fileID,format,0); % no processing 
+fclose(fileID);
+
+%  Run the processing pipeline and skip steps 
+command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR_' subj.name '.txt --clean'];
+status = system(command);
 
 %  Tell the user that processing is done
 main_GUI.userprompt = uicontrol('Style','text',...
@@ -129,6 +142,29 @@ main_GUI.study_selection = uicontrol('Style','popupmenu',...
 waitfor(main_GUI.study_selection,'Value');
 temp_selection = main_GUI.study_selection.String(main_GUI.study_selection.Value);
 subj.breathhold = temp_selection{1};
+set(main_GUI.study_selection,'Enable','off');
+
+switch main_GUI.stimulus_selection.Value
+    case 2
+        selection = 'BH';
+        if strcmp(subj.breathhold,'HV') == 1
+            boxcar = [directories.matlabdir '/python/standard_HV.1D'];
+        elseif strcmp(subj.breathhold,'MOT') == 1
+        else
+            boxcar = [directories.matlabdir '/python/standard_boxcar.1D'];
+        end
+    case 3
+        selection = 'GA';
+        if strcmp(subj.breathhold,'SENS') == 1
+            boxcar = [directories.matlabdir '/python/standard_HV.1D'];
+        else
+            boxcar = [directories.matlabdir '/python/standard_boxcar.1D'];
+        end
+    case 4
+        selection = 'BELLOWS';
+    case 5
+        selection = 'CO2';
+end
 
 %  Load in the functional data that comes out of the processing pipeline,
 %  map to anatomical space and then load that nii 
@@ -138,12 +174,6 @@ funct = load_nii([directories.subject '/' functional_data]);
 %  Check if the standard stimfiles are the correct length, adjust them if
 %  not, then copy them to metadata/stim
 funct.time = funct.hdr.dime.dim(5);
-
-if strcmp(subj.breathhold,'HV') == 1
-    boxcar = [directories.matlabdir '/python/standard_HV.1D'];
-else
-    boxcar = [directories.matlabdir '/python/standard_boxcar.1D'];
-end
 
 copy_stim = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'];
 
@@ -176,43 +206,45 @@ elseif(count < funct.time)
 elseif(count == funct.time)
     copyfile(boxcar,copy_stim,'f');
 end               
-                        
-bg = uibuttongroup('Visible','off',...
-                   'Title','Boxcar Selection',...
-                  'Position',[0.15 0.28 .7 .12],...
-                  'SelectionChangedFcn',@bselection);
-                                    
-%  Radiobutton for standard single staggered boxcar 
-main_GUI.boxcar(1) = uicontrol(bg,'Style','radiobutton',...
-                        'Visible','on',...
-                        'Units','pixels',...
-                        'String','Standard Single Staggered',...
-                        'HandleVisibility','off',...
-                        'Position',[10,50,200,25],...
-                        'Enable','on',...
-                        'callback',{@standard_selected}); 
-                    
-%  Radiobutton for customized boxcar 
-main_GUI.boxcar(2) = uicontrol(bg,'Style','radiobutton',...
-                        'Visible','on',...
-                        'Units','pixels',...
-                        'String','Shift the Standard Boxcar',...
-                        'HandleVisibility','off',...
-                        'Position',[10,25,200,25],...
-                        'Enable','on',...
-                        'callback',{@adjust_boxcar,subj,directories,main_GUI}); 
-                        
-%  Radiobutton for customized boxcar 
-main_GUI.boxcar(3) = uicontrol(bg,'Style','radiobutton',...
-                        'Visible','on',...
-                        'Units','pixels',...
-                        'String','Create Customized Boxcar',...
-                        'HandleVisibility','off',...
-                        'Position',[10,0,200,25],...
-                        'Enable','on',...
-                        'callback',{@adjust_boxcar,subj,directories,main_GUI});   
-                    
-bg.Visible = 'on';
+       
+if strcmp(selection,'BH') == 1 || strcp(selection,'GA') == 1
+    bg = uibuttongroup('Visible','off',...
+                       'Title','Boxcar Selection',...
+                      'Position',[0.15 0.28 .7 .12],...
+                      'SelectionChangedFcn',@bselection);
+
+    %  Radiobutton for standard single staggered boxcar 
+    main_GUI.boxcar(1) = uicontrol(bg,'Style','radiobutton',...
+                            'Visible','on',...
+                            'Units','pixels',...
+                            'String','Standard Boxcar',...
+                            'HandleVisibility','off',...
+                            'Position',[10,50,200,25],...
+                            'Enable','on',...
+                            'callback',{@standard_selected}); 
+
+    %  Radiobutton for customized boxcar 
+    main_GUI.boxcar(2) = uicontrol(bg,'Style','radiobutton',...
+                            'Visible','on',...
+                            'Units','pixels',...
+                            'String','Shift the Standard Boxcar',...
+                            'HandleVisibility','off',...
+                            'Position',[10,25,200,25],...
+                            'Enable','on',...
+                            'callback',{@adjust_boxcar,subj,directories,main_GUI}); 
+
+    %  Radiobutton for customized boxcar 
+    main_GUI.boxcar(3) = uicontrol(bg,'Style','radiobutton',...
+                            'Visible','on',...
+                            'Units','pixels',...
+                            'String','Create Customized Boxcar',...
+                            'HandleVisibility','off',...
+                            'Position',[10,0,200,25],...
+                            'Enable','on',...
+                            'callback',{@adjust_boxcar,subj,directories,main_GUI});   
+
+    bg.Visible = 'on';
+end
 
 guidata(main_GUI.f,main_GUI);
 

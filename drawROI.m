@@ -105,6 +105,7 @@ ylabel('BOLD Signal')
 hold; % hold the plot 
 
 stimfile = load(stim); % load the stimfile used to generate the parametric map 
+stimfile = stimfile/10;
 stimfile = stimfile + (median(timeseries_plot) - median(stimfile)) + 50; % move the plot up so that user can easily compare timeseries and stim
 plot(stimfile,'Color','red','Linewidth',2); % plot the stimfile 
 legend('Timeseries from ROI','Stimfile signal')

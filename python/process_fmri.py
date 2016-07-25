@@ -186,7 +186,7 @@ if __name__ == '__main__' :
     dir_recon_base = check_dir ( pinfo.dir_recon,debug)
     print pinfo.dir_recon
     if processing == '0': # Then don't do processing steps
-		pinfo.dir_processed = pinfo.dir_processed + '_not'
+		pinfo.dir_processed = pinfo.dir_dcm_base + '/data/raw'
     # if data3 != '1':
 		# pinfo.dir_processed = pinfo.dir_processed + '_' + add_suffix1
     dir_processed_base = check_dir(pinfo.dir_processed, debug)  # create base processed director
