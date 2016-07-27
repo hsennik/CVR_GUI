@@ -27,7 +27,7 @@ dimension = 'axial'; % variable to be fed in to the CVRmap function
 if mp.menu(2).Value == 2
     add_on = '_processed';
 elseif mp.menu(2).Value == 3
-    add_on = '_processed_not';
+    add_on = '_raw';
 end
 
 if mask_sel ~= 1
@@ -35,15 +35,15 @@ if mask_sel ~= 1
         region = 'Remove Ventricles and Venosinuses';
     elseif mask_sel == 3 % White matter
         region = 'Only White Matter';
-        timeseries = [directories.flirtdir '/standard_to_functional/whitematter_' subj.breathhold add_on '.1D'];
+        timeseries = [directories.flirtdir '/standard_to_functional/whitematter_' subj.proc_rec_sel add_on '.1D'];
         mask = load_nii([directories.flirtdir '/standard_to_anat/white_to_anat.nii']);
     elseif mask_sel == 4 % Gray matter
         region = 'Only Gray Matter';
-        timeseries = [directories.flirtdir '/standard_to_functional/graymatter_' subj.breathhold add_on '.1D'];
+        timeseries = [directories.flirtdir '/standard_to_functional/graymatter_' subj.proc_rec_sel add_on '.1D'];
         mask = load_nii([directories.flirtdir '/standard_to_anat/gray_to_anat.nii']);
     elseif mask_sel == 5 % Cerebellum  
         region = 'Only Cerebellum';
-        timeseries = [directories.metadata '/stim/pf_stim_' subj.breathhold add_on '.1D'];
+        timeseries = [directories.metadata '/stim/pf_stim_' subj.proc_rec_sel add_on '.1D'];
         mask = load_nii([directories.flirtdir '/standard_to_anat/cerebellum_to_anat.nii']);
     end
 

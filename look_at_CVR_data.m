@@ -46,6 +46,11 @@ subj.date = '160314';
 
 fileID = fopen([directories.textfilesdir '/breathhold_selection.txt'],'r'); % Subject name is pulled from this textfile (this is the subject that was just fully processed and analyzed)
 subj.breathhold = fscanf(fileID,'%s\n');
+fclose(fileID);
+
+fileID = fopen([directories.textfilesdir '/gen_selection.txt'],'r'); 
+subj.proc_rec_sel = fscanf(fileID,'%s\n');
+fclose(fileID);
 
 %  Step 1: Clinician specifies processing parameters and selects stimfile
 
@@ -71,7 +76,7 @@ mp.text(1) = uicontrol('Style','text',...
 mp.text(4) = uicontrol('Style','text',...
                 'units','normalized',...
                 'Position',[0.2,0.75,0.6,0.15],...
-                'String',['Breathhold: ' subj.breathhold]);           
+                'String',['Study: ' subj.breathhold]);           
 
 %  Descriptive text for the stimfile selection dropdown menu                        
 mp.text(2) = uicontrol('Style','text',...
@@ -123,16 +128,23 @@ mp.CVRb = uicontrol('Style','togglebutton',...
 %  method
 mp.program_again = uicontrol('Style','togglebutton',...
                     'Visible','on',...
-                    'String','Use another method',...
-                    'Enable','off',...
+                    'String','Refresh this GUI',...
+                    'Enable','on',...
                     'Value',0,'Position',[75,150,150,60],...
                     'callback',@run_again);
+
+%  Button to terminate the program (close all windows)
+mp.back = uicontrol('Style','togglebutton',...
+                    'Visible','on',...
+                    'String','Back to Analysis GUI',...
+                    'Value',0,'Position',[75,85,150,60],...
+                    'callback',@first_gui_again);                
                 
 %  Button to terminate the program (close all windows)
 mp.quit = uicontrol('Style','togglebutton',...
                     'Visible','on',...
                     'String','End CVR program',...
-                    'Value',0,'Position',[75,50,150,60],...
+                    'Value',0,'Position',[75,20,150,60],...
                     'callback',@quit_program);
                 
 %  Descriptive text for t_stat slider 
@@ -182,24 +194,26 @@ anat.yrange = (1:anat.y);
 anat.zrange = (1:anat.z); 
 
 %  Adjusting the contrast of the anatomical scans (shrink the window of the range of values)
-anat.sigmin = 10; 
-anat.sigmax = 300; % make this user driven (used to be 500)
+global sigmin;
+sigmin = 10;
+global sigmax;
+sigmax = 500;
 
 %  Preparing slices to be displayed in each dimension 
 %  AXIAL slice
-anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
 anat.slice_ax = imresize(anat.slice_ax,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
 anat.slice_ax = rot90(anat.slice_ax(anat.xrange,anat.yrange,:));
 anat.slice_ax = flip(anat.slice_ax,2);
 
 %  CORONAL slice
-anat.slice_cor = (double(repmat(imresize(squeeze(anat.img(:,anat.slice_y,:)),[anat.x anat.z]), [1 1 3])) - anat.sigmin) / anat.sigmax;
+anat.slice_cor = (double(repmat(imresize(squeeze(anat.img(:,anat.slice_y,:)),[anat.x anat.z]), [1 1 3])) - sigmin) / sigmax;
 anat.slice_cor = imresize(anat.slice_cor,[anat.x anat.z/anat.hdr.dime.pixdim(2)]);
 anat.slice_cor = rot90(anat.slice_cor(anat.xrange,anat.zrange,:));
 anat.slice_cor = flip(anat.slice_cor,2);
 
 %  SAGITTAL slice
-anat.slice_sag = (double(repmat(imresize(squeeze(anat.img(anat.slice_x,:,:)),[anat.y anat.z]), [1 1 3])) - anat.sigmin) / anat.sigmax;
+anat.slice_sag = (double(repmat(imresize(squeeze(anat.img(anat.slice_x,:,:)),[anat.y anat.z]), [1 1 3])) - sigmin) / sigmax;
 anat.slice_sag = imresize(anat.slice_sag,[anat.y anat.z/anat.hdr.dime.pixdim(3)]);
 anat.slice_sag = rot90(anat.slice_sag(anat.yrange,anat.zrange,:));
 anat.slice_sag = flip(anat.slice_sag,2);
@@ -223,19 +237,15 @@ format = '%d\n';
 stimsel = fscanf(fileID,format);
 fclose(fileID);
 
-if stimsel == 2
-    prefix = 'BH';
-elseif stimsel == 3
-    prefix = 'GA';
+if(standard_shifted_custom == 1) % customized boxcars were created for some or all breathholds 
+    box_adj = 'standard';
+elseif standard_shifted_custom == 2
+    box_adj = 'shifted';
+elseif standard_shifted_custom == 3
+    box_adj = 'customized';
 end
 
-if(standard_shifted_custom == 1) % customized boxcars were created for some or all breathholds 
-    placeholder = [prefix '_standard'];
-elseif standard_shifted_custom == 2
-    placeholder = [prefix '_shifted'];
-elseif standard_shifted_custom == 2
-    placeholder = [prefix '_customized'];
-end
+placeholder = box_adj;
 
 fileID = fopen([directories.subject '/textfiles/processing.txt'],'w+'); % open the file that indicates whether or not to do processing 
 format = '%d';
@@ -251,7 +261,7 @@ elseif(mp.menu(2).Value == 3) % if the user chooses to display the raw data, wri
 end
 
 if(mp.menu(1).Value == 2) % boxcar was selected as stimfile option by user on the GUI 
-    show_boxcar_string = ['Boxcar selection: ' placeholder]; % indicate to the user if the boxcar for that breathhold is the standard boxcar or customized
+    show_boxcar_string = ['Boxcar selection: ' box_adj]; % indicate to the user if the boxcar for that breathhold is the standard boxcar or customized
     
 %  Text that displays the boxcar selection (standard/customized). Shows up
 %  once the breathhold has been selected, and if pf is not selected as the
@@ -266,20 +276,20 @@ switch(mp.menu(1).Value) % stimfile menu selection
     case(2) % stimfile selection is boxcar 
         if (mp.menu(2).Value == 2) % processed data 
             type = [placeholder '_boxcar']; 
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
+            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         elseif(mp.menu(2).Value == 3) % raw data 
             type = [placeholder '_boxcar_raw'];
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
+            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         end    
         montage_info = [placeholder '_boxcar']; % variable used in make_montage.m to find the correct REDCap text file 
         
     case(3) % stimfile selection is pf 
         if (mp.menu(2).Value == 2) % processed data 
             type = 'pf';
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
+            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         elseif(mp.menu(2).Value == 3) % raw data
             type = 'pf_raw';
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
+            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
         end    
         montage_info = 'pf';
 end

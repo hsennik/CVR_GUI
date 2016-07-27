@@ -2,9 +2,6 @@ function analyze_subject(source,callbackdata,subj,directories,main_GUI)
 
 directories.flirtdir = 'flirt';
 
-temp_selection = main_GUI.study_selection.String(main_GUI.study_selection.Value);
-subj.breathhold = temp_selection{1};
-
 %  Make flirt directory that will be used for mapping functional data to
 %  anatomical space, and for generating pf stimfiles
 mkdir([directories.subject '/' directories.flirtdir '/pf']);
@@ -15,22 +12,17 @@ format = '%d\n';
 
 if main_GUI.stimulus_selection.Value == 2 || main_GUI.stimulus_selection.Value == 3
 
-    if main_GUI.stimulus_selection.Value == 2
-        add_prefix = 'BH';
-    elseif main_GUI.stimulus_selection.Value == 3
-        add_prefix = 'GA';
-    end
     if main_GUI.boxcar(1).Value == 1 % standard boxcar was selected for breathhold
         fprintf(fileID,format,1);
-        boxcar_destination = [add_prefix '_standard_boxcar'];
+        boxcar_destination = ['standard_boxcar'];
         fclose(fileID);
     elseif main_GUI.boxcar(2).Value == 1 % shifted boxcar was selected for breathhold 
         fprintf(fileID,format,2);
-        boxcar_destination = [add_prefix '_shifted_boxcar'];
+        boxcar_destination = ['shifted_boxcar'];
         fclose(fileID);
     elseif main_GUI.boxcar(3).Value == 1 % customized boxcar was selected for breathhold
         fprintf(fileID,format,3);
-        boxcar_destination = [add_prefix '_customized_boxcar'];
+        boxcar_destination = ['customized_boxcar'];
         fclose(fileID);
     end
     
@@ -42,11 +34,6 @@ end
 
 mkdir([directories.subject '/' directories.flirtdir '/' boxcar_destination]);
 mkdir([directories.subject '/' directories.flirtdir '/' boxcar_destination '_raw']);
-
-fileID = fopen([directories.textfilesdir '/breathhold_selection.txt'],'w+');
-format = '%s';
-fprintf(fileID,format,subj.breathhold); % print the breathhold selection to file (to be used as fmri_name in analyze_fmri.py)
-fclose(fileID);
 
 fileID = fopen([directories.textfilesdir '/stimulus.txt'],'w+'); % Open the text file in write mode to write the stimulus values
 format = '%d\n';
@@ -83,7 +70,7 @@ for stimulus=1:stimulus_number %  First for loop goes through stimfile selection
             %  Transform MNI standard brain to functional space
             s1 = ['flirt -in ' directories.matlabdir '/standard_files/avg152T1_brain.nii.gz -ref data/'];
             s2 = destination_name_P;
-            s3 = ['/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii -out flirt/'];
+            s3 = ['/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out flirt/'];
             s4 = destination_name_A;
             s5 = ['/stand2funct.nii -omat ' directories.flirtdir '/'];
             s6 = '/stand2funct.mat -dof 12';
@@ -92,7 +79,6 @@ for stimulus=1:stimulus_number %  First for loop goes through stimfile selection
             command = brainmni2target;
             status = system(command);
             
- 
             directories.standfunct = 'standard_to_functional';
             mkdir(directories.flirtdir,['/' directories.standfunct]);
             
@@ -100,17 +86,17 @@ for stimulus=1:stimulus_number %  First for loop goes through stimfile selection
                 if mask == 1
                     standard_file = 'Cerebellum-MNIflirt-maxprob-thr50-2mm.nii.gz';
                     out_file = ['/' destination_name_A '/cereb2funct.nii'];
-                    s13 = [destination_name_A '/pf_stim_' subj.breathhold '_' destination_name_P '.1D'];
+                    s13 = [destination_name_A '/pf_stim_' subj.proc_rec_sel '_' destination_name_P '.1D'];
                     region = 'Cerebellum';
                 elseif mask == 2
                     standard_file = 'avg152T1_white.img';
                     out_file = ['/' directories.standfunct '/white2funct.nii'];
-                    s13 = [directories.standfunct '/whitematter_' subj.breathhold '_' destination_name_P '.1D'];
+                    s13 = [directories.standfunct '/whitematter_' subj.proc_rec_sel '_' destination_name_P '.1D'];
                     region = 'White Matter';
                 elseif mask == 3
                     standard_file = 'avg152T1_gray.img';
                     out_file = ['/' directories.standfunct '/gray2funct.nii'];
-                    s13 = [directories.standfunct '/graymatter_' subj.breathhold '_' destination_name_P '.1D'];
+                    s13 = [directories.standfunct '/graymatter_' subj.proc_rec_sel '_' destination_name_P '.1D'];
                     region = 'Gray Matter';
                 end
             
@@ -128,7 +114,7 @@ for stimulus=1:stimulus_number %  First for loop goes through stimfile selection
                 %  the region 
                 s10 = ['3dmaskave -q -mask ' directories.flirtdir '/'];
                 s11 = [out_file ' data/'];
-                s12 = ['/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii > flirt/'];
+                s12 = ['/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii > flirt/'];
 
                 mask = [s10 s11 s2 s12 s13];
                 status = system(mask);
@@ -159,17 +145,17 @@ for stimulus=1:stimulus_number %  First for loop goes through stimfile selection
         %  Create transformation matrix for functional data to anatomical space
         str1 = [directories.flirtdir ' -in data/analyzed_'];
         str2 = destination_name_A;
-        str3 = ['/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii -ref data/recon'];
+        str3 = ['/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck.nii -ref data/recon'];
         str5 = ['/' subj.name '/' subj.name '_anat_brain.nii -out ' directories.flirtdir '/'];
-        str6 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_anat_space.nii -omat ' directories.flirtdir '/'];
-        str7 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_anat_space.mat -dof 12'];
+        str6 = ['/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_anat_space.nii -omat ' directories.flirtdir '/'];
+        str7 = ['/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_anat_space.mat -dof 12'];
 
         glm2anat = [str1 str2 str3 str5 str2 str6 str2 str7];
         command = glm2anat;
         status = system(command);
 
         %  Load the unmapped functional data 
-        load_glm = ['data/analyzed_' destination_name_A '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'];
+        load_glm = ['data/analyzed_' destination_name_A '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck.nii'];
         temp = load_nii(load_glm);
         [temp.x,temp.y,temp.z] = size(temp.img);
 
@@ -177,15 +163,15 @@ for stimulus=1:stimulus_number %  First for loop goes through stimfile selection
         voxel_size = [temp.hdr.dime.pixdim(2) temp.hdr.dime.pixdim(3) temp.hdr.dime.pixdim(4)];
         temp.brain_bucket_5 = double(squeeze(temp.img(:,:,:,:,5)));
         nii = make_nii(temp.brain_bucket_5,voxel_size);
-        save_fifthbucket = [directories.flirtdir '/' destination_name_A '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE.nii'];
+        save_fifthbucket = [directories.flirtdir '/' destination_name_A '/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE.nii'];
         save_nii(nii,save_fifthbucket); 
 
         %  Map the fifth bucket to anatomical space using the
         %  transformation matrix generated above
         str8 = ['flirt -in ' directories.flirtdir '/'];
-        str9 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE.nii -ref data/recon'];
-        str10 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii -init ' directories.flirtdir '/'];
-        str11 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_anat_space.mat -applyxfm'];
+        str9 = ['/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE.nii -ref data/recon'];
+        str10 = ['/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii -init ' directories.flirtdir '/'];
+        str11 = ['/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_glm_buck_anat_space.mat -applyxfm'];
 
         bucketfive2anat = [str8 str2 str9 str5 str2 str10 str2 str11];
         command = bucketfive2anat;

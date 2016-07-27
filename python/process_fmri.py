@@ -25,6 +25,7 @@ from process_fmri_functions import *
 import process_fmri_parameters
 import inspect
 from shutil import copyfile
+import fnmatch
 
 program_name = 'process_fmri.py'
 
@@ -107,8 +108,11 @@ elif temporal_filtering == '3':
 
 with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
-
 print processing
+
+with open('/data/hannahsennik/MATLAB/CVR_GUI/subject_name.txt') as myfile3:
+	subjNAME = myfile3.readline()
+myfile3.close
 	
 if __name__ == '__main__' :
 
@@ -233,211 +237,222 @@ if __name__ == '__main__' :
         anat_brain, anat_mask = cmd_afni_skullstrip(dir_recon, anat, dir_recon, anat, pinfo.file_type, debug)
 
         for fmri_name in info_subj[subj]['fmri']:
-            if info_subj[subj]['fmri'][fmri_name].find('xxx') > -1:
-                print "Skipping %s - no dicom directory given" % (fmri_name,)
-            else:
-                print
-                print  "**** PROCESSING fMRI - %s_%s ****" % (subj, fmri_name)
+			if fmri_name == 'CVR1' or fmri_name == 'CVR2' or fmri_name == 'CVR3':
+				pinfo.fmri_nt = 240
+			else:
+				pinfo.fmri_nt = 180
+			if info_subj[subj]['fmri'][fmri_name].find('xxx') > -1:
+				print "Skipping %s - no dicom directory given" % (fmri_name,)
+			else:
+				print
+				print  "**** PROCESSING fMRI - %s_%s ****" % (subj, fmri_name)
 
-                dir_dcm_fmri = "%s/%s/*%s*" % \
-                    (pinfo.dir_dcm_base, info_subj[subj]['dir_dcm_raw'], info_subj[subj]['fmri'][fmri_name])
-                if options.skip_recon:
-                    fmri = subj + '_' + fmri_name
-                else:
-                    fmri = recon_epi(subj, dir_dcm_fmri, dir_recon, fmri_name, pinfo.file_type, pinfo, debug)
-                    
+				dir_dcm_fmri = "%s/%s/*%s*" % \
+					(pinfo.dir_dcm_base, info_subj[subj]['dir_dcm_raw'], info_subj[subj]['fmri'][fmri_name])
+				if options.skip_recon:
+					fmri = subj + '_' + fmri_name
+				else:
+					fmri = recon_epi(subj, dir_dcm_fmri, dir_recon, fmri_name, pinfo.file_type, pinfo, debug)
+					
 
-                # Recon fMRI
-                fname_active = '%s' % (fmri,)            # Initialize active filename
-                
-                # find how many TRs are in raw data (if specified to do so)
-                if pinfo.fmri_nt==-1:
-                    num_TR = cmd_fslval(dir_recon, fmri, pinfo.file_type, '4', debug)
-                    num_TR = int(num_TR)
-                else:
-                    num_TR = pinfo.fmri_nt
-                
-                # Go through processing steps 
-                for process_step in list_process:
+				# Recon fMRI
+				fname_active = '%s' % (fmri,)            # Initialize active filename
+				
+				# find how many TRs are in raw data (if specified to do so)
+				if pinfo.fmri_nt==-1:
+					num_TR = cmd_fslval(dir_recon, fmri, pinfo.file_type, '4', debug)
+					num_TR = int(num_TR)
+				else:
+					print(fmri_name)
+					if fmri_name == 'CVR1' or fmri_name == 'CVR2' or fmri_name == 'CVR3':
+						pinfo.fmri_nt = 240
+						print('IN HEREERERE')
+					else:
+						pinfo.fmri_nt = 180
+					num_TR = pinfo.fmri_nt
+					print(num_TR)
 
-                    if fname_active == fmri:    # If first processing step after recon, then input dir is raw data
-                        dir_active_in = dir_recon   
-                    else:                       # otherwise input data is 'processed'
-                        dir_active_in = dir_subj
-                    
-                    if process_step == 'trim':   # Trim excess volumes
-                        index_last_vol = num_TR - pinfo.drop_end - 1   # subtract 1 because 0 relative
-                        fname_active = cmd_afni_trim(dir_active_in, fname_active, pinfo.drop_begin, \
-                            index_last_vol, dir_subj, fname_active, pinfo.file_type, debug)
-                    elif process_step == 'st':  # Slice timing correction
-                        print
-                        print '*** SLICE TIMING CORRECTION ***'
-                        fname_active = cmd_afni_3dTshift(dir_active_in, fname_active, pinfo.st_ignore, \
-                            dir_subj, fname_active, pinfo.file_type, debug)
-                        
-                    elif process_step == 'mc':     # Motion Correction
-                        print
-                        print '*** MOTION CORRECTION ***'
-                        fname_active = cmd_afni_3dvolreg(dir_active_in, fname_active, \
-                            pinfo.mc_refvol, dir_subj, fname_active, pinfo.file_type, debug)
-                        fname_MD = '%s_MD.1D' % (fname_active,)  # Max diplacement 1D file
-                        fname_mpe = '%s.1D' % (fname_active,)    # Motion parameter estimates 1D file
-                        # Motion Correction - Create a censor file based on MD
-                        fname_censor = cmd_censor(dir_active_in, fname_MD, dir_subj, \
-                            fname_active + '_censor.1D', pinfo.mc_outlier_MD, debug)
-                        
-                    elif process_step == 'sm':
-                        print
-                        print "*** SMOOTHING ***"
-                        # Take average, then generate a mask for smoothing
-                        fname_presm_mean = cmd_afni_create_mean(dir_active_in, fname_active, \
-                            dir_subj, pinfo.file_type, debug)
-                        fname_presm_mask = cmd_afni_automask(dir_active_in, fname_presm_mean, \
-                            dir_subj, fname_active, pinfo.file_type, debug)
-                        
-                        # Smooth dataset
-                        # fname_active = cmd_afni_smooth(pinfo.sm_type, pinfo.sm_fwhm, \
+				# Go through processing steps 
+				for process_step in list_process:
+
+					if fname_active == fmri:    # If first processing step after recon, then input dir is raw data
+						dir_active_in = dir_recon   
+					else:                       # otherwise input data is 'processed'
+						dir_active_in = dir_subj
+					
+					if process_step == 'trim':   # Trim excess volumes
+						index_last_vol = num_TR - pinfo.drop_end - 1   # subtract 1 because 0 relative
+						fname_active = cmd_afni_trim(dir_active_in, fname_active, pinfo.drop_begin, \
+							index_last_vol, dir_subj, fname_active, pinfo.file_type, debug)
+					elif process_step == 'st':  # Slice timing correction
+						print
+						print '*** SLICE TIMING CORRECTION ***'
+						fname_active = cmd_afni_3dTshift(dir_active_in, fname_active, pinfo.st_ignore, \
+							dir_subj, fname_active, pinfo.file_type, debug)
+						
+					elif process_step == 'mc':     # Motion Correction
+						print
+						print '*** MOTION CORRECTION ***'
+						fname_active = cmd_afni_3dvolreg(dir_active_in, fname_active, \
+							pinfo.mc_refvol, dir_subj, fname_active, pinfo.file_type, debug)
+						fname_MD = '%s_MD.1D' % (fname_active,)  # Max diplacement 1D file
+						fname_mpe = '%s.1D' % (fname_active,)    # Motion parameter estimates 1D file
+						# Motion Correction - Create a censor file based on MD
+						fname_censor = cmd_censor(dir_active_in, fname_MD, dir_subj, \
+							fname_active + '_censor.1D', pinfo.mc_outlier_MD, debug)
+						
+					elif process_step == 'sm':
+						print
+						print "*** SMOOTHING ***"
+						# Take average, then generate a mask for smoothing
+						fname_presm_mean = cmd_afni_create_mean(dir_active_in, fname_active, \
+							dir_subj, pinfo.file_type, debug)
+						fname_presm_mask = cmd_afni_automask(dir_active_in, fname_presm_mean, \
+							dir_subj, fname_active, pinfo.file_type, debug)
+						
+						# Smooth dataset
+						# fname_active = cmd_afni_smooth(pinfo.sm_type, pinfo.sm_fwhm, \
 							# dir_subj, dir_active_in, fname_active, \
 							# dir_subj, fname_presm_mask, pinfo.file_type, debug)
-                        # print pinfo.sm_fwhm
-                        # print fname_active
-                        
-                    elif process_step == 'reg':
-                        print
-                        print '*** REGISTRATION ***'
+						# print pinfo.sm_fwhm
+						# print fname_active
+						
+					elif process_step == 'reg':
+						print
+						print '*** REGISTRATION ***'
 
-                        # XFMs go to recon directory
-                        dir_ref = '${FSLDIR}/data/standard'
-                        if pinfo.reg_ref == 'MNI_1mm':
-                            file_ref = 'MNI152_T1_1mm_brain.nii.gz'
-                        else:
-                            file_ref = 'MNI152_T1_2mm_brain.nii.gz'
+						# XFMs go to recon directory
+						dir_ref = '${FSLDIR}/data/standard'
+						if pinfo.reg_ref == 'MNI_1mm':
+							file_ref = 'MNI152_T1_1mm_brain.nii.gz'
+						else:
+							file_ref = 'MNI152_T1_2mm_brain.nii.gz'
 
-                        # Generate average fMRI brain only
-                        fname_mean = cmd_afni_create_mean(dir_active_in, fname_active, \
-                            dir_subj, pinfo.file_type, debug)
-                        print fname_mean 
-                        fname_mask = cmd_afni_automask(dir_active_in, fname_mean, \
-                            dir_subj, fname_active, pinfo.file_type, debug)
-                        print(dir_active_in, fname_active, dir_subj, pinfo.file_type)
-                        print fname_mask
-                        fname_brain = cmd_afni_basic_calc(dir_subj, fname_mean, \
-                            dir_subj, fname_mask, dir_subj, fname_mean + '_brain', '*', \
-                            pinfo.file_type, debug)
-                        print fname_brain
+						# Generate average fMRI brain only
+						fname_mean = cmd_afni_create_mean(dir_active_in, fname_active, \
+							dir_subj, pinfo.file_type, debug)
+						print fname_mean 
+						fname_mask = cmd_afni_automask(dir_active_in, fname_mean, \
+							dir_subj, fname_active, pinfo.file_type, debug)
+						print(dir_active_in, fname_active, dir_subj, pinfo.file_type)
+						print fname_mask
+						fname_brain = cmd_afni_basic_calc(dir_subj, fname_mean, \
+							dir_subj, fname_mask, dir_subj, fname_mean + '_brain', '*', \
+							pinfo.file_type, debug)
+						print fname_brain
 
-                        if pinfo.reg_ref == 'MNI_2mm':    
-                            # LINEAR TRANSFORMS
-                            # Calculate fmri->anat
-                            xfm_fmri_anat = cmd_fsl_flirt_calc(dir_active_in, fname_brain, \
-                                dir_recon, anat_brain, pinfo.reg_dof_EPI_anat, \
-                                dir_recon, fmri + '_anat', pinfo.file_type, debug)
-                            
-                            # Calculate anat->ref
-                            xfm_anat_ref = cmd_fsl_flirt_calc(dir_recon, anat_brain, \
-                                dir_ref, file_ref, pinfo.reg_dof_anat_ref, \
-                                dir_recon, anat + '_ref', pinfo.file_type, debug)
-                                                
-                            # Calculate fmri->template
-                            xfm_fmri_ref = cmd_fsl_convert_xfm(dir_recon, fmri + '_ref.xfm', \
-                                xfm_fmri_anat, xfm_anat_ref, debug)                 
-                            
-                            # NON LINEAR
-                            if pinfo.reg_method == 'fnirt':
-                                warp_anat_ref = cmd_fsl_fnirt_calc(dir_recon, anat_brain, \
-                                    dir_recon, xfm_anat_ref, dir_recon, anat + '_ref_warp' , \
-                                    pinfo.reg_fnirt_config, pinfo.file_type, debug)                    
+						if pinfo.reg_ref == 'MNI_2mm':    
+							# LINEAR TRANSFORMS
+							# Calculate fmri->anat
+							xfm_fmri_anat = cmd_fsl_flirt_calc(dir_active_in, fname_brain, \
+								dir_recon, anat_brain, pinfo.reg_dof_EPI_anat, \
+								dir_recon, fmri + '_anat', pinfo.file_type, debug)
+							
+							# Calculate anat->ref
+							xfm_anat_ref = cmd_fsl_flirt_calc(dir_recon, anat_brain, \
+								dir_ref, file_ref, pinfo.reg_dof_anat_ref, \
+								dir_recon, anat + '_ref', pinfo.file_type, debug)
+												
+							# Calculate fmri->template
+							xfm_fmri_ref = cmd_fsl_convert_xfm(dir_recon, fmri + '_ref.xfm', \
+								xfm_fmri_anat, xfm_anat_ref, debug)                 
+							
+							# NON LINEAR
+							if pinfo.reg_method == 'fnirt':
+								warp_anat_ref = cmd_fsl_fnirt_calc(dir_recon, anat_brain, \
+									dir_recon, xfm_anat_ref, dir_recon, anat + '_ref_warp' , \
+									pinfo.reg_fnirt_config, pinfo.file_type, debug)                    
 
-                                    # registered anatomical goes to recon directory
-                                anat_ref = cmd_fsl_fnirt_apply_anat(dir_recon, anat, \
-                                    dir_recon, warp_anat_ref, dir_ref, file_ref, \
-                                    dir_recon, anat + '_warpRef' , pinfo.file_type, debug)
-                                
-                                # registered functional goes to processed 
-                                fname_active = cmd_fsl_fnirt_apply_epi(dir_subj, fname_active, \
-                                    'pre', dir_recon, xfm_fmri_anat, \
-                                    dir_recon, warp_anat_ref, dir_ref, file_ref, \
-                                    dir_subj, fname_active + '_warpRef', pinfo.file_type, debug)
-                            
-                            # LINEAR TRANSFORM
-                            elif pinfo.reg_method == 'flirt':   
-                                # apply anat->template - into recon directory
-                                anat_ref = cmd_fsl_flirt_apply(dir_recon, anat, dir_ref, file_ref, \
-                                    dir_recon, anat + '_ref', dir_recon, xfm_anat_ref, pinfo.file_type, 'sinc', debug)
+									# registered anatomical goes to recon directory
+								anat_ref = cmd_fsl_fnirt_apply_anat(dir_recon, anat, \
+									dir_recon, warp_anat_ref, dir_ref, file_ref, \
+									dir_recon, anat + '_warpRef' , pinfo.file_type, debug)
+								
+								# registered functional goes to processed 
+								fname_active = cmd_fsl_fnirt_apply_epi(dir_subj, fname_active, \
+									'pre', dir_recon, xfm_fmri_anat, \
+									dir_recon, warp_anat_ref, dir_ref, file_ref, \
+									dir_subj, fname_active + '_warpRef', pinfo.file_type, debug)
+							
+							# LINEAR TRANSFORM
+							elif pinfo.reg_method == 'flirt':   
+								# apply anat->template - into recon directory
+								anat_ref = cmd_fsl_flirt_apply(dir_recon, anat, dir_ref, file_ref, \
+									dir_recon, anat + '_ref', dir_recon, xfm_anat_ref, pinfo.file_type, 'sinc', debug)
 
-                                # apply fmri->template - into subject directory
-                                fname_active = cmd_fsl_flirt_applyxfm4D(dir_active_in, fname_active, \
-                                    dir_ref, file_ref, dir_subj, fname_active + '_ref', \
-                                    dir_recon, xfm_fmri_ref, pinfo.file_type, debug)
-                                   
-                            # LINEAR w/in subject registration
-                            elif pinfo.reg_method == 'subj':  
-                                # apply fmri->anat  into subject directory
-                                fname_active = cmd_fsl_flirt_applyxfm4D(dir_active_in, fname_active, \
-                                    dir_ref, file_ref, dir_subj, fname_active + '_anat', \
-                                    dir_recon, xfm_fmri_anat, pinfo.file_type, debug)
-                            else:
-                                raise SystemExit, 'ERROR - Invalid registration method %s ' % \
-                                    (pinfo.reg_method,)
+								# apply fmri->template - into subject directory
+								fname_active = cmd_fsl_flirt_applyxfm4D(dir_active_in, fname_active, \
+									dir_ref, file_ref, dir_subj, fname_active + '_ref', \
+									dir_recon, xfm_fmri_ref, pinfo.file_type, debug)
+								   
+							# LINEAR w/in subject registration
+							elif pinfo.reg_method == 'subj':  
+								# apply fmri->anat  into subject directory
+								fname_active = cmd_fsl_flirt_applyxfm4D(dir_active_in, fname_active, \
+									dir_ref, file_ref, dir_subj, fname_active + '_anat', \
+									dir_recon, xfm_fmri_anat, pinfo.file_type, debug)
+							else:
+								raise SystemExit, 'ERROR - Invalid registration method %s ' % \
+									(pinfo.reg_method,)
 
-                        elif pinfo.reg_ref == 'fmri':
-                            # Calculate anat->fmri
-                            xfm_anat_fmri = cmd_fsl_flirt_calc(dir_recon, anat_brain, \
-                                dir_active_in, fname_brain, pinfo.reg_dof_EPI_anat, \
-                                dir_recon, anat + '_' + fmri_name, pinfo.file_type, debug)
-                            
-                            # register anatomical into fmri space (recon directory)
-                            anat_fmri = cmd_fsl_flirt_apply(dir_recon, anat_brain, dir_active_in, fname_brain, \
-                                dir_recon, anat + '_' + fmri_name, dir_recon, xfm_anat_fmri, pinfo.file_type, 'sinc', debug)
-                            
-                            # Calculate fmri->anat
-                            xfm_fmri_anat = cmd_fsl_flirt_calc(dir_active_in, fname_brain, \
-                                dir_recon, anat_brain, pinfo.reg_dof_EPI_anat, \
-                                dir_recon, fmri + '_anat', pinfo.file_type, debug)
+						elif pinfo.reg_ref == 'fmri':
+							# Calculate anat->fmri
+							xfm_anat_fmri = cmd_fsl_flirt_calc(dir_recon, anat_brain, \
+								dir_active_in, fname_brain, pinfo.reg_dof_EPI_anat, \
+								dir_recon, anat + '_' + fmri_name, pinfo.file_type, debug)
+							
+							# register anatomical into fmri space (recon directory)
+							anat_fmri = cmd_fsl_flirt_apply(dir_recon, anat_brain, dir_active_in, fname_brain, \
+								dir_recon, anat + '_' + fmri_name, dir_recon, xfm_anat_fmri, pinfo.file_type, 'sinc', debug)
+							
+							# Calculate fmri->anat
+							xfm_fmri_anat = cmd_fsl_flirt_calc(dir_active_in, fname_brain, \
+								dir_recon, anat_brain, pinfo.reg_dof_EPI_anat, \
+								dir_recon, fmri + '_anat', pinfo.file_type, debug)
 
-                                
-                            if options.somanyxfm:
-                                # save xfm of fmri -> anat too
-                                xfm_fmri_anat = cmd_fsl_flirt_calc(dir_active_in, fname_brain, \
-                                    dir_recon, anat_brain, pinfo.reg_dof_EPI_anat, \
-                                    dir_recon, subj + '_' + fmri_name + '_' + 'anat', pinfo.file_type, debug)
-                                    
-                                # save xfm of anat -> ref
-                                xfm_anat_ref = cmd_fsl_flirt_calc(dir_recon, anat_brain, \
-                                    dir_ref, file_ref, pinfo.reg_dof_anat_ref, \
-                                    dir_recon, anat + '_ref', pinfo.file_type, debug)
-                                    
-                                # save xfm of fmri -> ref
-                                # use convert_xfm to concatenate the 2 xfm files
-                                xfm_fmri_ref = cmd_fsl_convert_xfm(dir_recon, subj + '_' + fmri_name + '_ref.xfm', \
-                                    xfm_fmri_anat, xfm_anat_ref, debug)
-                                
-                            if pinfo.ref_to_fmri:
-                                # register MNI first to anatomical, then to fmri space (using xfm_anat_fmri)
-                                xfm_ref_anat = cmd_fsl_flirt_calc(dir_ref, file_ref, \
-                                    dir_recon, anat_brain, pinfo.reg_dof_anat_ref, \
-                                    dir_recon, subj + '_ref_anat', pinfo.file_type, debug)
-                                    
-                                # create mni_anat.nii for testing purposes
-                                #mni_fmri = cmd_fsl_flirt_apply(dir_ref, file_ref, dir_recon, anat_brain, \
-                                #    dir_recon, subj + '_ref_anat', dir_recon, xfm_ref_anat, pinfo.file_type, 'sinc', debug)
-                                
-                                # use convert_xfm to concatenate the 2 xfm files (ref_anat, anat_fmri)
-                                xfm_ref_fmri = cmd_fsl_convert_xfm(dir_recon, subj + '_ref_' + fmri_name + '.xfm', \
-                                    xfm_ref_anat, xfm_anat_fmri, debug)
-                                
-                                # register mni into fmri space (don't really need to save this)
-                                #mni_fmri = cmd_fsl_flirt_apply(dir_ref, file_ref, dir_active_in, fname_brain, \
-                                #    dir_recon, subj + '_mni_' + fmri_name, dir_recon, xfm_ref_fmri, pinfo.file_type, 'sinc', debug)
-                                
-                                    
-                            if (pinfo.roi_to_fmri & pinfo.ref_to_fmri):
-                                # register CSF/WM ROIs to fmri space
-                                roi_fmri = cmd_fsl_flirt_apply(pinfo.roi_dir, pinfo.roi_fname, dir_active_in, fname_brain, \
-                                    dir_recon, subj + '_roi_' + fmri_name, dir_recon, xfm_ref_fmri, pinfo.file_type, 'nearestneighbour', debug)
-                                
-                            if (pinfo.atlas_to_fmri & pinfo.ref_to_fmri):    
-                                # register atlas to fmri space
+								
+							if options.somanyxfm:
+								# save xfm of fmri -> anat too
+								xfm_fmri_anat = cmd_fsl_flirt_calc(dir_active_in, fname_brain, \
+									dir_recon, anat_brain, pinfo.reg_dof_EPI_anat, \
+									dir_recon, subj + '_' + fmri_name + '_' + 'anat', pinfo.file_type, debug)
+									
+								# save xfm of anat -> ref
+								xfm_anat_ref = cmd_fsl_flirt_calc(dir_recon, anat_brain, \
+									dir_ref, file_ref, pinfo.reg_dof_anat_ref, \
+									dir_recon, anat + '_ref', pinfo.file_type, debug)
+									
+								# save xfm of fmri -> ref
+								# use convert_xfm to concatenate the 2 xfm files
+								xfm_fmri_ref = cmd_fsl_convert_xfm(dir_recon, subj + '_' + fmri_name + '_ref.xfm', \
+									xfm_fmri_anat, xfm_anat_ref, debug)
+								
+							if pinfo.ref_to_fmri:
+								# register MNI first to anatomical, then to fmri space (using xfm_anat_fmri)
+								xfm_ref_anat = cmd_fsl_flirt_calc(dir_ref, file_ref, \
+									dir_recon, anat_brain, pinfo.reg_dof_anat_ref, \
+									dir_recon, subj + '_ref_anat', pinfo.file_type, debug)
+									
+								# create mni_anat.nii for testing purposes
+								#mni_fmri = cmd_fsl_flirt_apply(dir_ref, file_ref, dir_recon, anat_brain, \
+								#    dir_recon, subj + '_ref_anat', dir_recon, xfm_ref_anat, pinfo.file_type, 'sinc', debug)
+								
+								# use convert_xfm to concatenate the 2 xfm files (ref_anat, anat_fmri)
+								xfm_ref_fmri = cmd_fsl_convert_xfm(dir_recon, subj + '_ref_' + fmri_name + '.xfm', \
+									xfm_ref_anat, xfm_anat_fmri, debug)
+								
+								# register mni into fmri space (don't really need to save this)
+								#mni_fmri = cmd_fsl_flirt_apply(dir_ref, file_ref, dir_active_in, fname_brain, \
+								#    dir_recon, subj + '_mni_' + fmri_name, dir_recon, xfm_ref_fmri, pinfo.file_type, 'sinc', debug)
+								
+									
+							if (pinfo.roi_to_fmri & pinfo.ref_to_fmri):
+								# register CSF/WM ROIs to fmri space
+								roi_fmri = cmd_fsl_flirt_apply(pinfo.roi_dir, pinfo.roi_fname, dir_active_in, fname_brain, \
+									dir_recon, subj + '_roi_' + fmri_name, dir_recon, xfm_ref_fmri, pinfo.file_type, 'nearestneighbour', debug)
+								
+							if (pinfo.atlas_to_fmri & pinfo.ref_to_fmri):    
+								# register atlas to fmri space
 								atlas_list = pinfo.atlas_list.split(',')
 								atlas_alias = pinfo.atlas_alias.split(',')
 								
@@ -454,213 +469,213 @@ if __name__ == '__main__' :
 										dir_recon, xfm_ref_fmri, pinfo.file_type, 'nearestneighbour', debug)
 									
 									count = count + 1
-                               
-                        
-                        else:
-                            raise SystemExit, 'ERROR - Invalid registration reference %s ' % \
-                                (pinfo.reg_method,)
-                                    
-                    elif process_step == 'tfilt':
-                        print
-                        print "*** TEMPORAL FILTERING ***"
-                        # Generate ROI 1D files
-                        fname_roi_1D = '%s_roi.1D' % (fname_active,)
-                        if not pinfo.roi_type=='none':
-                            roi_list = pinfo.roi_list.split(',')
-                            if pinfo.roi_type=='group':
-                                fname_roi_mask = pinfo.roi_fname
-                                roi_dir = pinfo.roi_dir
-                            elif ((pinfo.roi_type=='subj') & (pinfo.roi_to_fmri==1)):
-                                fname_roi_mask = subj + '_roi_' + fmri_name
-                                roi_dir = dir_recon
-                            elif pinfo.roi_type =='subj':
-                                fname_roi_mask = '%s_%s' % (subj, pinfo.roi_fname)
-                                roi_dir = pinfo.roi_dir
-                            print 'Generating ROI values - %s ' % (fname_roi_1D)
-                            fname_roi_1D = create_1D(roi_dir, fname_roi_mask, roi_list, \
-                                 dir_subj, fname_active, dir_subj, fname_roi_1D, pinfo.file_type, debug)
-                        else:
-                            fname_roi_1D = ''
-                            roi_list = ''
+							   
+						
+						else:
+							raise SystemExit, 'ERROR - Invalid registration reference %s ' % \
+								(pinfo.reg_method,)
+									
+					elif process_step == 'tfilt':
+						print
+						print "*** TEMPORAL FILTERING ***"
+						# Generate ROI 1D files
+						fname_roi_1D = '%s_roi.1D' % (fname_active,)
+						if not pinfo.roi_type=='none':
+							roi_list = pinfo.roi_list.split(',')
+							if pinfo.roi_type=='group':
+								fname_roi_mask = pinfo.roi_fname
+								roi_dir = pinfo.roi_dir
+							elif ((pinfo.roi_type=='subj') & (pinfo.roi_to_fmri==1)):
+								fname_roi_mask = subj + '_roi_' + fmri_name
+								roi_dir = dir_recon
+							elif pinfo.roi_type =='subj':
+								fname_roi_mask = '%s_%s' % (subj, pinfo.roi_fname)
+								roi_dir = pinfo.roi_dir
+							print 'Generating ROI values - %s ' % (fname_roi_1D)
+							fname_roi_1D = create_1D(roi_dir, fname_roi_mask, roi_list, \
+								 dir_subj, fname_active, dir_subj, fname_roi_1D, pinfo.file_type, debug)
+						else:
+							fname_roi_1D = ''
+							roi_list = ''
 
-                        # Orthogonalize data using 3dDeconvolve
-                        if add_suffix1 == 'mpe':
-                        #if pinfo.mpr_type == 'mpe':
-                            num_motion = 6
-                            fname_mpr = fname_mpe
-                        elif add_suffix1 == 'MD':
-                        #elif pinfo.mpr_type == 'MD':
-                            num_motion = 1
-                            fname_mpr = fname_MD
-                        elif add_suffix1 == 'none':
-                            num_motion = 0
-                            fname_mpr = fname_MD   # dummy variable call/is this the same as none?
-                     
-                        # Generate average fMRI MASK only
-                        fname_mean = cmd_afni_create_mean(dir_active_in, fname_active, \
-                            dir_subj, pinfo.file_type, debug)
-                        fname_mask = cmd_afni_automask(dir_active_in, fname_mean, \
-                            dir_subj, fname_active, pinfo.file_type, debug)
-                        
-                        # Use the above-generated fMRI mask as a whole-brain signal regressor, if requested
-                        if pinfo.roi_wholebrain==1:
-                            print 'Doing whole brain regression - %s ' % (fname_roi_1D)
-                            fname_roi_1D_wholebrain = 'wholebrain_roi.1D'
-                            fname_roi_mask = fname_mask
-                            roi_dir = dir_subj
-                            roi_list2 = fname_roi_mask.split(',') # all this does it make it compatible with a for loop in create_1D (needs to be a list) :S
-                            fname_roi_1D_wholebrain = create_1D(roi_dir, fname_roi_mask, roi_list2, \
-                                dir_subj, fname_active, dir_subj, fname_roi_1D_wholebrain, pinfo.file_type, debug)
-                            
-                            # check to see if a regression 1D file already exists
-                            # if it doesn't, then you don't even care, things are easy
-                            # if it does, then you'll need to append the whole brain 1D as a new column to the fname_roi_1D file
-                            if not pinfo.roi_type=='none':
-                                array_rois = [[double(i) for i in line.split()] for line in open(dir_subj + '/' + fname_roi_1D)]
-                                array_wholebrain = [[double(i) for i in line.split()] for line in open(dir_subj + '/' + fname_roi_1D_wholebrain)]
-                                combined_file = column_stack((array_rois,array_wholebrain))
-                                roi_list.append(fname_roi_1D_wholebrain)
-                                if not debug: 
-                                    savetxt(dir_subj + '/' + 'wholebrain_all_roi.1D', combined_file, fmt='%6.5f')
-                                fname_roi_1D = 'wholebrain_all_roi.1D'
-                                
-                            else:
-                                fname_roi_1D = fname_roi_1D_wholebrain
-                                roi_list=[fname_roi_1D]
-                           
-                        fname_ortho_buck, fname_ortho_err = create_3dDecon(dir_active_in, fname_active, \
-                            pinfo.fmri_TR, dir_subj, fname_active, dir_subj, fname_censor, \
-                            dir_subj, fname_mask, dir_subj, fname_roi_1D, roi_list, \
-                            dir_subj, fname_mpr, num_motion, pinfo.det_order, \
-                            '','','', '', 0, '', '',pinfo.file_type, debug)    # pass nothing for stim at this time
-                        
-                        
-                        if not ((pinfo.hp_cutoff == 0) and (pinfo.lp_cutoff == 0)):
-                        # Band pass filter the residual
-                            fname_ortho_err_bp = cmd_afni_bandpass(dir_subj, fname_ortho_err, \
-                                dir_subj, fname_ortho_err, pinfo.hp_cutoff, pinfo.lp_cutoff, pinfo.file_type, debug)
-                        else:
-                            fname_ortho_err_bp = fname_ortho_err
-                            
-                        # Put polort 0 + Errts back together for a 'detrended' signal
-                        fname_pol0 = cmd_afni_extract_buck(dir_subj, fname_ortho_buck, 2, \
-                            dir_subj, fname_ortho_buck + '_pol0', pinfo.file_type, debug)
-                        fname_active = cmd_afni_basic_calc(dir_subj, fname_pol0, \
-                            dir_subj, fname_ortho_err_bp, dir_subj, fname_active + '_tfilt',  \
-                            '+', pinfo.file_type, debug)
-                                                    
-                    elif process_step == 'bavg':
-                        print
-                        print "*** BASELINE AVERAGING DATASET ***"
-                        # Load baseline ID file into memory
-                        if pinfo.bavg_fname_1D == 'ALL':
-                            data_base = ones((num_TR - pinfo.drop_begin - pinfo.drop_end,))
-                        else:   
-                            data_base = loadtxt(pinfo.bavg_dir_1D + '/' + pinfo.bavg_fname_1D)
-                            # Error check that data_base is the same size as the data
-                            if (debug < 1) and (len(data_base) != (num_TR - pinfo.drop_begin - pinfo.drop_end)):
-                                raise SystemExit, 'ERROR - fMRI data [%d] and Baseline ID [%s - %d] are different lengths' % \
-                                    (num_TR - pinfo.drop_begin - pinfo.drop_end, pinfo.bavg_fname_1D, len(data_base)) 
+						# Orthogonalize data using 3dDeconvolve
+						if add_suffix1 == 'mpe':
+						#if pinfo.mpr_type == 'mpe':
+							num_motion = 6
+							fname_mpr = fname_mpe
+						elif add_suffix1 == 'MD':
+						#elif pinfo.mpr_type == 'MD':
+							num_motion = 1
+							fname_mpr = fname_MD
+						elif add_suffix1 == 'none':
+							num_motion = 0
+							fname_mpr = fname_MD   # dummy variable call/is this the same as none?
+					 
+						# Generate average fMRI MASK only
+						fname_mean = cmd_afni_create_mean(dir_active_in, fname_active, \
+							dir_subj, pinfo.file_type, debug)
+						fname_mask = cmd_afni_automask(dir_active_in, fname_mean, \
+							dir_subj, fname_active, pinfo.file_type, debug)
+						
+						# Use the above-generated fMRI mask as a whole-brain signal regressor, if requested
+						if pinfo.roi_wholebrain==1:
+							print 'Doing whole brain regression - %s ' % (fname_roi_1D)
+							fname_roi_1D_wholebrain = 'wholebrain_roi.1D'
+							fname_roi_mask = fname_mask
+							roi_dir = dir_subj
+							roi_list2 = fname_roi_mask.split(',') # all this does it make it compatible with a for loop in create_1D (needs to be a list) :S
+							fname_roi_1D_wholebrain = create_1D(roi_dir, fname_roi_mask, roi_list2, \
+								dir_subj, fname_active, dir_subj, fname_roi_1D_wholebrain, pinfo.file_type, debug)
+							
+							# check to see if a regression 1D file already exists
+							# if it doesn't, then you don't even care, things are easy
+							# if it does, then you'll need to append the whole brain 1D as a new column to the fname_roi_1D file
+							if not pinfo.roi_type=='none':
+								array_rois = [[double(i) for i in line.split()] for line in open(dir_subj + '/' + fname_roi_1D)]
+								array_wholebrain = [[double(i) for i in line.split()] for line in open(dir_subj + '/' + fname_roi_1D_wholebrain)]
+								combined_file = column_stack((array_rois,array_wholebrain))
+								roi_list.append(fname_roi_1D_wholebrain)
+								if not debug: 
+									savetxt(dir_subj + '/' + 'wholebrain_all_roi.1D', combined_file, fmt='%6.5f')
+								fname_roi_1D = 'wholebrain_all_roi.1D'
+								
+							else:
+								fname_roi_1D = fname_roi_1D_wholebrain
+								roi_list=[fname_roi_1D]
+						   
+						fname_ortho_buck, fname_ortho_err = create_3dDecon(dir_active_in, fname_active, \
+							pinfo.fmri_TR, dir_subj, fname_active, dir_subj, fname_censor, \
+							dir_subj, fname_mask, dir_subj, fname_roi_1D, roi_list, \
+							dir_subj, fname_mpr, num_motion, pinfo.det_order, \
+							'','','', '', 0, '', '',pinfo.file_type, debug)    # pass nothing for stim at this time
+						
+						
+						if not ((pinfo.hp_cutoff == 0) and (pinfo.lp_cutoff == 0)):
+						# Band pass filter the residual
+							fname_ortho_err_bp = cmd_afni_bandpass(dir_subj, fname_ortho_err, \
+								dir_subj, fname_ortho_err, pinfo.hp_cutoff, pinfo.lp_cutoff, pinfo.file_type, debug)
+						else:
+							fname_ortho_err_bp = fname_ortho_err
+							
+						# Put polort 0 + Errts back together for a 'detrended' signal
+						fname_pol0 = cmd_afni_extract_buck(dir_subj, fname_ortho_buck, 2, \
+							dir_subj, fname_ortho_buck + '_pol0', pinfo.file_type, debug)
+						fname_active = cmd_afni_basic_calc(dir_subj, fname_pol0, \
+							dir_subj, fname_ortho_err_bp, dir_subj, fname_active + '_tfilt',  \
+							'+', pinfo.file_type, debug)
+													
+					elif process_step == 'bavg':
+						print
+						print "*** BASELINE AVERAGING DATASET ***"
+						# Load baseline ID file into memory
+						if pinfo.bavg_fname_1D == 'ALL':
+							data_base = ones((num_TR - pinfo.drop_begin - pinfo.drop_end,))
+						else:   
+							data_base = loadtxt(pinfo.bavg_dir_1D + '/' + pinfo.bavg_fname_1D)
+							# Error check that data_base is the same size as the data
+							if (debug < 1) and (len(data_base) != (num_TR - pinfo.drop_begin - pinfo.drop_end)):
+								raise SystemExit, 'ERROR - fMRI data [%d] and Baseline ID [%s - %d] are different lengths' % \
+									(num_TR - pinfo.drop_begin - pinfo.drop_end, pinfo.bavg_fname_1D, len(data_base)) 
 
-                        # Check if MD censor file exists
-                        try:
-                            fname_censor
-                        except NameError:
-                            fname_censor = None
+						# Check if MD censor file exists
+						try:
+							fname_censor
+						except NameError:
+							fname_censor = None
 
-                        # If it does not exist (or in debug mode), create an array of 1s equal to size of baseline ID
-                        if (fname_censor is None) or debug>0:
-                            data_cens = ones(size(data_base))
-                        else: # If it does exist,  load it 
-                            data_cens = loadtxt(dir_subj + '/' + fname_censor)
-                            
-                            # Error check that data_base is the same size as the censor file (should be!)
-                            if (len(data_base) != len(data_cens)):
-                                raise SystemExit, 'ERROR - MD Censor file [%s, %d] and Baseline ID [%s - %d] are different lengths' % \
-                                    (fname_censor, len(data_cens), pinfo.bavg_fname_1D, len(data_base)) 
-                        
-                        # Create baseline and MD censored 1D file
-                        fname_base_censored = '%s_base_censored.1D' % (fmri,)
-                        if not debug:
-                            savetxt(dir_subj + '/' + fname_base_censored, data_base * data_cens, fmt="%d")
+						# If it does not exist (or in debug mode), create an array of 1s equal to size of baseline ID
+						if (fname_censor is None) or debug>0:
+							data_cens = ones(size(data_base))
+						else: # If it does exist,  load it 
+							data_cens = loadtxt(dir_subj + '/' + fname_censor)
+							
+							# Error check that data_base is the same size as the censor file (should be!)
+							if (len(data_base) != len(data_cens)):
+								raise SystemExit, 'ERROR - MD Censor file [%s, %d] and Baseline ID [%s - %d] are different lengths' % \
+									(fname_censor, len(data_cens), pinfo.bavg_fname_1D, len(data_base)) 
+						
+						# Create baseline and MD censored 1D file
+						fname_base_censored = '%s_base_censored.1D' % (fmri,)
+						if not debug:
+							savetxt(dir_subj + '/' + fname_base_censored, data_base * data_cens, fmt="%d")
 
-                        # Calculate mean of baseline and MD censored fMRI data
-                        fname_bavg = calc_base_avg(dir_active_in, fname_active, dir_subj, fname_base_censored, \
-                            dir_subj, fname_active, pinfo.file_type, debug)
-                        
-                        # Remask baseline mean to precision errors
-                        fname_bavg_masked = cmd_afni_basic_calc(dir_subj, fname_bavg, dir_subj, fname_mask, \
-                            dir_subj, fname_bavg + '_mask' ,'*', pinfo.file_type, debug)
-                        
-                        # Divide active fMRI dataset by mean
-                        fname_active = cmd_afni_basic_calc(dir_subj, fname_active, dir_subj, fname_bavg_masked, \
-                            dir_subj, fname_active + '_bavgd', '/', pinfo.file_type, debug)
-                        
-                
-                print
-                # REMOVING INTERMEDIATE .NII FILES (option --clean)   - added 2012-09-04 by BM
-                if options.clean:
-                    print '*** REMOVING INTERMEDIATE .nii FILES ***' 
-                    sys_cmd = 'mkdir %s/tmp' % (dir_subj)
-                    run_cmd(sys_cmd,debug)
-                    sys_cmd = 'cp %s/%s*.nii %s/tmp/' % (dir_subj, fname_active, dir_subj)
-                    run_cmd(sys_cmd,debug)
-                    sys_cmd = 'rm %s/%s*.nii' % (dir_subj, fmri)
-                    run_cmd(sys_cmd,debug)
-                    sys_cmd = 'mv %s/tmp/* %s/' % (dir_subj, dir_subj)
-                    run_cmd(sys_cmd,debug)
-                    sys_cmd = 'rm -r %s/tmp' % (dir_subj)
-                    run_cmd(sys_cmd,debug)
-                
-                fname_short = '%s_%s' % (fmri, pinfo.pipeline_id)                
-                print
-                print '** Creating short form links - %s ' % (fname_short,)
-                #       SHORT FORMING fMRI DATA
-                # subject directory
-                print fname_active 
-                sys_cmd = 'ln -s %s/%s%s %s/%s%s' % (dir_subj, fname_active, pinfo.file_type, \
-                    dir_subj, fname_short, pinfo.file_type)
-                check_and_run(sys_cmd, dir_subj, fname_short, pinfo.file_type, debug)
-                # processed directory
-                sys_cmd = 'ln -s %s/%s%s %s/%s%s' % (dir_subj, fname_active, pinfo.file_type, \
-                    dir_final, fname_short, pinfo.file_type)
-                check_and_run(sys_cmd, dir_final, fname_short, pinfo.file_type, debug)
+						# Calculate mean of baseline and MD censored fMRI data
+						fname_bavg = calc_base_avg(dir_active_in, fname_active, dir_subj, fname_base_censored, \
+							dir_subj, fname_active, pinfo.file_type, debug)
+						
+						# Remask baseline mean to precision errors
+						fname_bavg_masked = cmd_afni_basic_calc(dir_subj, fname_bavg, dir_subj, fname_mask, \
+							dir_subj, fname_bavg + '_mask' ,'*', pinfo.file_type, debug)
+						
+						# Divide active fMRI dataset by mean
+						fname_active = cmd_afni_basic_calc(dir_subj, fname_active, dir_subj, fname_bavg_masked, \
+							dir_subj, fname_active + '_bavgd', '/', pinfo.file_type, debug)
+						
+				
+				print
+				# REMOVING INTERMEDIATE .NII FILES (option --clean)   - added 2012-09-04 by BM
+				if options.clean:
+					print '*** REMOVING INTERMEDIATE .nii FILES ***' 
+					sys_cmd = 'mkdir %s/tmp' % (dir_subj)
+					run_cmd(sys_cmd,debug)
+					sys_cmd = 'cp %s/%s*.nii %s/tmp/' % (dir_subj, fname_active, dir_subj)
+					run_cmd(sys_cmd,debug)
+					sys_cmd = 'rm %s/%s*.nii' % (dir_subj, fmri)
+					run_cmd(sys_cmd,debug)
+					sys_cmd = 'mv %s/tmp/* %s/' % (dir_subj, dir_subj)
+					run_cmd(sys_cmd,debug)
+					sys_cmd = 'rm -r %s/tmp' % (dir_subj)
+					run_cmd(sys_cmd,debug)
+				
+				fname_short = '%s_%s' % (fmri, pinfo.pipeline_id)                
+				print
+				print '** Creating short form links - %s ' % (fname_short,)
+				#       SHORT FORMING fMRI DATA
+				# subject directory
+				print fname_active 
+				sys_cmd = 'ln -s %s/%s%s %s/%s%s' % (dir_subj, fname_active, pinfo.file_type, \
+					dir_subj, fname_short, pinfo.file_type)
+				check_and_run(sys_cmd, dir_subj, fname_short, pinfo.file_type, debug)
+				# processed directory
+				sys_cmd = 'ln -s %s/%s%s %s/%s%s' % (dir_subj, fname_active, pinfo.file_type, \
+					dir_final, fname_short, pinfo.file_type)
+				check_and_run(sys_cmd, dir_final, fname_short, pinfo.file_type, debug)
 
-                #       FINAL fMRI MASK 
-                print fname_active
-                fname_mean = cmd_afni_create_mean(dir_subj, fname_active, \
-                    dir_subj, pinfo.file_type, debug)
-                print fname_mean
+				#       FINAL fMRI MASK 
+				print fname_active
+				fname_mean = cmd_afni_create_mean(dir_subj, fname_active, \
+					dir_subj, pinfo.file_type, debug)
+				print fname_mean
 				#		COMMENTED THIS SECTION BECAUSE IT SHOULDN'T BE HERE, messed up masks for no processing 
-                #fname_mask = cmd_afni_thresh(dir_subj, fname_mean, 0, \
+				#fname_mask = cmd_afni_thresh(dir_subj, fname_mean, 0, \
 				#	dir_subj, fname_mean + '_mask', 0, pinfo.file_type, debug)
-                print fname_mask
-                # Subject Directory - short form link
-                sys_cmd = 'ln -s %s/%s%s %s/%s_mask%s' % (dir_subj, fname_mask, pinfo.file_type, \
-                    dir_subj, fname_short, pinfo.file_type)
-                check_and_run(sys_cmd, dir_subj, fname_short + '_mask', pinfo.file_type, debug)
-                # Processed Directory - short form link
-                sys_cmd = 'ln -s %s/%s%s %s/%s_mask%s' % (dir_subj, fname_mask, pinfo.file_type, \
-                    dir_final, fname_short, pinfo.file_type)
-                check_and_run(sys_cmd, dir_final, fname_short + '_mask', pinfo.file_type, debug)
+				print fname_mask
+				# Subject Directory - short form link
+				sys_cmd = 'ln -s %s/%s%s %s/%s_mask%s' % (dir_subj, fname_mask, pinfo.file_type, \
+					dir_subj, fname_short, pinfo.file_type)
+				check_and_run(sys_cmd, dir_subj, fname_short + '_mask', pinfo.file_type, debug)
+				# Processed Directory - short form link
+				sys_cmd = 'ln -s %s/%s%s %s/%s_mask%s' % (dir_subj, fname_mask, pinfo.file_type, \
+					dir_final, fname_short, pinfo.file_type)
+				check_and_run(sys_cmd, dir_final, fname_short + '_mask', pinfo.file_type, debug)
 
-                # If a censor file exists, create a short form link for it
-                try:
-                    fname_censor
-                except NameError:
-                    fname_censor = None
-                if not (fname_censor is None):
-                    # Subject directory
-                    sys_cmd = 'ln -s %s/%s %s/%s_censor.1D' % (dir_subj, fname_censor, \
-                        dir_subj, fname_short)
-                    check_and_run(sys_cmd, dir_subj, fname_short + '_censor.1D', '', debug)
-                    # Processed directory
-                    sys_cmd = 'ln -s %s/%s %s/%s_censor.1D' % (dir_subj, fname_censor, \
-                        dir_final, fname_short)
-                    check_and_run(sys_cmd, dir_final, fname_short + '_censor.1D', '', debug)
-                
-                
-                print '**** DONE PROCESSING - %s ****' % (fmri,)				
+				# If a censor file exists, create a short form link for it
+				try:
+					fname_censor
+				except NameError:
+					fname_censor = None
+				if not (fname_censor is None):
+					# Subject directory
+					sys_cmd = 'ln -s %s/%s %s/%s_censor.1D' % (dir_subj, fname_censor, \
+						dir_subj, fname_short)
+					check_and_run(sys_cmd, dir_subj, fname_short + '_censor.1D', '', debug)
+					# Processed directory
+					sys_cmd = 'ln -s %s/%s %s/%s_censor.1D' % (dir_subj, fname_censor, \
+						dir_final, fname_short)
+					check_and_run(sys_cmd, dir_final, fname_short + '_censor.1D', '', debug)
+				
+				
+				print '**** DONE PROCESSING - %s ****' % (fmri,)				
 				
 if processing == '0':
 	fileName = 'REDCap_import_files/all/'+ subj + '_not_processed_parameters.txt'

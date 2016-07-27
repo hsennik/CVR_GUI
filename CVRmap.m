@@ -22,6 +22,8 @@ function CVRmap(dimension,anat,funct,mp,sliceval,det_functionality,gen_file_loca
 global ax_slider_value;  
 global cor_slider_value;
 global sag_slider_value;
+global sigmin;
+global sigmax;
 
 ROImask = 0;
 
@@ -65,13 +67,13 @@ end
 
 %  Anatomical data 
 if strcmp(dimension,'axial') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(1)]);
 elseif strcmp(dimension,'coronal') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
 elseif strcmp(dimension,'saggital') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
 end
 updated_slice = rot90(updated_slice(range1,range2,:)); % Rotate and flip the slice so that it is displayed correctly to the user 
@@ -93,7 +95,7 @@ funct.mask = rot90(funct.mask(range1,range2,:));
 funct.mask = flip(funct.mask,2);
 
 if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
-    masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+    masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
     masked_slice = flip(masked_slice,2);
@@ -155,7 +157,7 @@ blueImg(positive) = 0;
 blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
 
 % if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
-%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
 %     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
 %     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
 %     masked_slice = flip(masked_slice,2);

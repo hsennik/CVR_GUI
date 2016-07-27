@@ -18,6 +18,7 @@ xlabel('Scan Time')
 ylabel('BOLD Signal')
 hold; % hold the plot 
 
+customizedbox = customizedbox/10;
 customizedbox = customizedbox + (median(timeseries) - median(customizedbox)) + 50;
 stimplot = plot(customizedbox,'Color','red','Linewidth',2); 
 

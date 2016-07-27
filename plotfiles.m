@@ -16,9 +16,9 @@ if(mp.menu(1).Value == 2) % boxcar
     end
 elseif(mp.menu(1).Value == 3)
     if mp.menu(2).Value == 2
-        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+        stim = [directories.metadata '/stim/pf_stim_' subj.proc_rec_sel '_processed.1D'];
     elseif mp.menu(2).Value == 3
-        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+        stim = [directories.metadata '/stim/pf_stim_' subj.proc_rec_sel '_processed.1D'];
     end
 end
 
@@ -30,7 +30,7 @@ set(ts, 'MenuBar', 'none'); % remove the menu bar
 set(ts, 'ToolBar', 'none'); % remove the tool bar    
 plot(timeseries_plot,'LineWidth',2);
 title('Timeseries vs. Stimulus');
-xlabel('Time');
+xlabel('Number of TRs');
 ylabel('BOLD Signal');
 hold; % hold the plot 
 stimfile = load(stim); % load the stimfile used to generate the parametric map 

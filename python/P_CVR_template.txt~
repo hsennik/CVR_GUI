@@ -1,0 +1,56 @@
+########################################################
+#### Process Pipeline information file #################
+########################################################
+fname_pipeline := 			# Name of the data information file 
+pipeline_id := CVR_160314			    # Process Pipeline ID 
+pipeline_descrip := all processed CVR data  # short one line description of the pipeline
+dir_dcm_base :=  /data/projects/CVR/GUI_subjects/Kumar16                   # Base directory for raw dicom files 
+dir_analyzed := /data/projects/CVR/GUI_subjects/Kumar16/data/analyzed      # Output directory base, final directory = output_dir/<pipeline_id>/<subject_id>
+dir_processed := /data/projects/CVR/GUI_subjects/Kumar16/data/processed          # Output directory base, final directory = output_dir/<pipeline_id>/<subject_id>
+dir_recon := /data/projects/CVR/GUI_subjects/Kumar16/data/recon          # Output directory base for recon
+pipeline_order := trim,mc,st,tfilt,sm,reg       # Processing pipeline steps to run, comma separated and in order
+dcm_type := 4Ddcm                          # Dicom organization [single - one dcm file for all slices; dir - directory of dcm files for all slices; 4Ddcm - 1 dcm file per fmri scan]
+file_type := .nii                            # What file type to use [.nii, +orig]
+#### fMRI DATA INFO ####################################
+fmri_order := tz                                # dcm slice order [tz, zt]
+fmri_nz := 25                                   # Number of slices
+fmri_nt := 180                                  # Number of TR
+fmri_TR := 2                             # TR (s)
+fmri_sliceorder := seqplus                           # Slice order (AFNI terminology, ie. seqplus)
+#### DROP SCANS (trim) #################################
+drop_begin := 2 					                # How many scans to drop from the beginning of fMRI
+drop_end := 0                                   # How many scans to drop from the end of fMRI
+#### PHYSIOLOGICAL NOISE CORRECTION (phys) #############
+phys_type := phycaa                             # Type of physiological noise correction [retroicor, phycaa]
+phys_cardiac_suffix := 'card'                   # Cardiac flag ie. CTL01_CMT1_card.txt
+phys_resp_suffix := 'resp'                      # Cardiac flag ie. CTL01_CMT1_resp.txt
+#### SLICE TIMING CORRECTION (st) ######################
+st_ignore := 2                                  # How many initial scans to ignore [0 = none]
+#### MOTION CORRECTION (mc) ############################
+mc_refvol := 60                                  # Which reference volume to use, after scans have been dropped [0+ = volume # (0 relative)]
+mc_outlier_MD := 1.5                              # Maximum displacement threshold (mm) [set to 0 to turn off]
+#### REGISTRATION (reg) ################################
+reg_ref := fmri
+ref_to_fmri := 0				# 1 = register template to the fMRI space (requires reg_ref=fmri), 0 = off 
+roi_to_fmri := 0				# 1 = register roi (from tfilt) to fmri space (requires reg_ref=fmri and mni_to_fmri=1), 0 = off 
+atlas_to_fmri := 0				# 1 = register atlas to fmri space (requires reg_ref=fmri and mni_to_fmri=1), 0 = off                                  # What reference space to align into [MNI_2mm, fmri]
+reg_method := fnirt                             # Which registration method [subj, flirt, fnirt]     
+reg_dof_EPI_anat := 7                           # DOF for EPI->ANAT registration [7]
+reg_dof_anat_ref := 12                          # DOF for ANAT->REF registration [12]
+reg_fnirt_config := T1_2_MNI152_2mm.cnf         # for fnirt based registrations, config file [T1_2_MNI152_2mm.cnf]
+#### SMOOTHING (sm) ####################################
+sm_type := 2D                                   # type of smoothing [2D, 3D]
+sm_fwhm := 7.0                                    # Smoothing kernal size (mm)
+#### TEMPORAL FILTERING (tfilt) #############
+det_order := A                                  # detrending order [AFNI like ie. -1 = off, A = auto]
+hp_cutoff := 0                                 # high pass filter frequency [0 = off]
+lp_cutoff := 0                                 # low pass filter frequency [0 = off]
+mpr_type :=                                  # What type of mpr [none, mpe, MD]
+roi_type := none                              # What type of ROI regression [none, subj, group]
+roi_dir :=  /data6/wayne/research/fMRI/rsn/rois     # Base directory of 4D  ROI mask (for subj specific ROIs, assumes common directory ie. <roi_dir>)
+roi_fname := rois_csf_wm                    # Fileame for 4D ROI masks (for subj specific ROIs,  this is a prefix ie. <subj>_<roi_fname><file_type>
+roi_list := csf_LP,csf_MR,csf_RP,csf_stem,wm_LF,wm_LP,wm_LS,wm_RF,wm_RP,wm_RS             # List of ROI names
+#### BASELINE AVERAGING (bavg) #########################
+bavg_dir_1D := /data6/ben/fMRI/CMT/metadata        # Directory for file (1D) which identifies baseline scans (with a 1)
+bavg_fname_1D := CMT_LMT_base.1D                     # File (1D) which identifies baseline scans (with a 1) ['ALL' = all scans are baseline]
+#### End of File #######################################

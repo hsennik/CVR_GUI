@@ -32,7 +32,7 @@ end
 
 fclose(fileID);
 
-fname = ['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii'];
+fname = ['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii'];
 processed = load_nii([directories.subject '/' fname]); % load "processed" functional data 
 
 [processed.x,processed.y,processed.z] = size(processed.img);
@@ -70,21 +70,21 @@ if(mp.menu(1).Value == 2) % boxcar
     end
 elseif(mp.menu(1).Value == 3)
     if mp.menu(2).Value == 2
-        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+        stim = [directories.metadata '/stim/pf_stim_' subj.proc_rec_sel '_processed.1D'];
     elseif mp.menu(2).Value == 3
-        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+        stim = [directories.metadata '/stim/pf_stim_' subj.proc_rec_sel '_processed.1D'];
     end
 end
 
 fclose(fileID);
 % Transform the mask from anatomical space to functional space - save as
 % finalmask.nii 
-command = ['flirt -in ' directories.timeseries '/mask.nii -ref data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii -out ' directories.timeseries '/finalmask.nii -init ' 'data/recon/' subj.name '/' subj.name '_anat_' subj.breathhold '.xfm -applyxfm'];
+command = ['flirt -in ' directories.timeseries '/mask.nii -ref data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.timeseries '/finalmask.nii -init ' 'data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm -applyxfm'];
 status= system(command);
 
 % Use 3dmaskave to mask the functional data with finalmask.nii and save the
 % timeseries to timeseries.1D in timeseries directory 
-command = ['3dmaskave -q -mask ' directories.timeseries '/finalmask.nii data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii > ' directories.timeseries '/timeseries.1D'];
+command = ['3dmaskave -q -mask ' directories.timeseries '/finalmask.nii data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii > ' directories.timeseries '/timeseries.1D'];
 status = system(command);
 
 %  Load in the 1D timeseries file and display as plot 
@@ -100,7 +100,7 @@ set(mp.f, 'ToolBar', 'none'); % remove the tool bar
 
 plot(timeseries_plot,'Linewidth',2);  % plot the timeseries from the ROI 
 title('Timeseries vs. Stimulus')
-xlabel('Time')
+xlabel('Number of TRs')
 ylabel('BOLD Signal')
 hold; % hold the plot 
 

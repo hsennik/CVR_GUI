@@ -5,6 +5,7 @@ shift_value = get(gui.shift_boxcar,'Value');
 display(shift_value);
 
 close(findobj('type','figure','name',['Timeseries: ' subj.breathhold]));
+close(findobj('type','figure','name',['Axial Subject Data: ' subj.breathhold]));
 
 shift_value = ceil(shift_value);
 
@@ -37,5 +38,7 @@ elseif sign(shift_value) == 1
     fileID = fopen([directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_shifted.1D'],'at');
     fprintf(fileID,format,buffer); 
     fclose(fileID);
+elseif sign(shift_value) == 0
+    copyfile([directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'],[directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_shifted.1D']);
 end
 end

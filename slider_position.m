@@ -3,6 +3,9 @@ function slider_position(dimension,anat,mp,funct,window,directories,subj,GUI,mas
 global ax_slider_value;
 global cor_slider_value;
 global sag_slider_value;
+global sigmin;
+global sigmax;
+
 
 if strcmp(dimension,'axial') == 1
     sliderval = ax_slider_value;
@@ -29,12 +32,12 @@ end
   
 slice = slice + floor(sliderval - slice); % Increase the slice position based on the slider value
 if strcmp(dimension,'axial') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
 elseif strcmp(dimension,'coronal') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
 elseif strcmp(dimension,'saggital') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
 end
 updated_slice = rot90(updated_slice(range1,range2,:)); % Rotate and flip the slice so that it is displayed correctly to the user 
@@ -58,7 +61,7 @@ if strcmp(mask_name,'') == 0 && strcmp(mask_name,'None') == 0
     if mp.CVRb.Value == 1
         CVRmap(dimension,anat,funct,mp,sliceval,mask.img,gen_file_location,mask_name);
     else
-        masked_slice = (double(repmat(imresize(squeeze(mask.img(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+        masked_slice = (double(repmat(imresize(squeeze(mask.img(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
         masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
         masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
         masked_slice = flip(masked_slice,2);
