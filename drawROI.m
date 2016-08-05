@@ -1,4 +1,4 @@
-function drawROI(source,callbackdata,anat,directories,subj,mp)
+function drawROI(source,callbackdata,anat,directories,subj,mp,stim)
 % Function to display timeseries from user drawn ROI 
 % 
 % INPUTS 
@@ -32,7 +32,7 @@ end
 
 fclose(fileID);
 
-fname = ['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii'];
+fname = ['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii'];
 processed = load_nii([directories.subject '/' fname]); % load "processed" functional data 
 
 [processed.x,processed.y,processed.z] = size(processed.img);
@@ -53,61 +53,30 @@ save_mask = [directories.timeseries '/mask.nii']; % save the mask as a nii to ti
 save_nii(data_out,save_mask);
 
 display('nii mask saved');
-
-fileID = fopen([directories.textfilesdir '/standard_shifted_customized.txt'],'r'); % open the customize boxcar file
-format = '%d';
-B = fscanf(fileID,format);
-
-% Determine which stimfile was used so that it can be displayed with the
-% timeseries 
-if(mp.menu(1).Value == 2) % boxcar
-    if B == 1
-        stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'];
-    elseif B == 2
-        stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_shifted.1D'];
-    elseif B == 3
-        stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D'];
-    end
-elseif(mp.menu(1).Value == 3)
-    if mp.menu(2).Value == 2
-        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
-    elseif mp.menu(2).Value == 3
-        stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
-    end
-end
-
-fclose(fileID);
+ 
 % Transform the mask from anatomical space to functional space - save as
 % finalmask.nii 
-command = ['flirt -in ' directories.timeseries '/mask.nii -ref data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii -out ' directories.timeseries '/finalmask.nii -init ' 'data/recon/' subj.name '/' subj.name '_anat_' subj.breathhold '.xfm -applyxfm'];
+command = ['flirt -in ' directories.timeseries '/mask.nii -ref data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.timeseries '/finalmask.nii -init ' 'data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm -applyxfm'];
 status= system(command);
 
 % Use 3dmaskave to mask the functional data with finalmask.nii and save the
 % timeseries to timeseries.1D in timeseries directory 
-command = ['3dmaskave -q -mask ' directories.timeseries '/finalmask.nii data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii > ' directories.timeseries '/timeseries.1D'];
+command = ['3dmaskave -q -mask ' directories.timeseries '/finalmask.nii data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii > ' directories.timeseries '/timeseries.1D'];
 status = system(command);
 
 %  Load in the 1D timeseries file and display as plot 
 timeseries = [directories.timeseries '/timeseries.1D'];
-timeseries_plot = load(timeseries);
 
-ts = figure('Name','Timeseries',...
-       'Visible','on',...
-       'Numbertitle','off',...
-       'Position', [1130,400,600,410]);
-set(mp.f, 'MenuBar', 'none'); % remove the menu bar 
-set(mp.f, 'ToolBar', 'none'); % remove the tool bar   
+shift_custom_capability = 5;
+boxcar_name = mp.menu(1).String(mp.menu(1).Value);
+boxcar_name = boxcar_name{1};
+figname = ['ROI Timeseries'];
+pos = [1130,400,600,410];
+funct_space = (['data/processed/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii']);
+funct_space = load_nii([directories.subject '/' funct_space]);
+timeseries_name = 'Timeseries from Drawn ROI';
 
-plot(timeseries_plot,'Linewidth',2);  % plot the timeseries from the ROI 
-title('Timeseries vs. Stimulus')
-xlabel('Time')
-ylabel('BOLD Signal')
-hold; % hold the plot 
+plotfiles(directories,subj,timeseries,stim,pos,figname,shift_custom_capability,timeseries_name,boxcar_name,funct_space,mp);
 
-stimfile = load(stim); % load the stimfile used to generate the parametric map 
-stimfile = stimfile/10;
-stimfile = stimfile + (median(timeseries_plot) - median(stimfile)) + 50; % move the plot up so that user can easily compare timeseries and stim
-plot(stimfile,'Color','red','Linewidth',2); % plot the stimfile 
-legend('Timeseries from ROI','Stimfile signal')
 
 end

@@ -3,16 +3,14 @@
 % Parameters:
 %   Processing: Processed OR unprocessed
 %   Stimfiles: boxcar, posterior fossa (pf)
-%   Breathholds: BH1,BH2,HV
-%   T-statistic: change for the parametric map 
+%   T-statistic: change to threshold parametric map 
 
 % Data that can be displayed:
 %   Anatomical slices: axial,coronal,sagittal
 %   Parametric maps overlain on anatomicals
 %   Pull timeseries from drawn ROI - plot of timeseries against stimfile 
 %   Pull timeseries from predetermined 3D ROI of brain region 
-%   Axial anatomical images with white matter masked (mask this on the CVR
-%   maps as well)
+%   Axial anatomical images with brain regions masked
 %   Montage of parametric maps 
 % 
 % File Name: basic_UI_function.m
@@ -25,15 +23,14 @@
 clear all; % clear all the variables
 close all; % close all windows 
 
-GUI = 2;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  INITIALIZE VARIABLES
 
+GUI = 2; % indicates that this is the second GUI (after process/analyze)
 addpath('/data/wayne/matlab/NIFTI'); % add path to nifti functions 
+
+%  DIRECTORIES
 directories.matlabdir = '/data/hannahsennik/MATLAB/CVR_GUI';
-fileID = fopen([directories.matlabdir '/subject_name.txt'],'r'); % Subject name is pulled from this textfile (this is the subject that was just fully processed and analyzed)
-subj.name = fscanf(fileID,'%s\n');
-fclose(fileID);
-directories.subject = ['/data/projects/CVR/GUI_subjects/' subj.name];
-cd(directories.subject); % Move in to subject directory
 directories.flirtdir = 'flirt';
 directories.matlab = 'matlab';
 directories.timeseries = 'timeseries';
@@ -42,129 +39,191 @@ directories.REDCapdir = 'REDCap_import_files';
 directories.metadata = 'metadata';
 directories.montagedir = 'montage';
 
-subj.date = '160314';
+%  SUBJECT DATA
+fileID = fopen([directories.matlabdir '/subject_name.txt'],'r'); % Subject name is pulled from this textfile (this is the subject that was just fully processed and analyzed)
+subj.name = fscanf(fileID,'%s\n');
+fclose(fileID);
+
+directories.subject = ['/data/projects/CVR/GUI_subjects/' subj.name];
+cd(directories.subject); % Move in to subject directory
 
 fileID = fopen([directories.textfilesdir '/breathhold_selection.txt'],'r'); % Subject name is pulled from this textfile (this is the subject that was just fully processed and analyzed)
 subj.breathhold = fscanf(fileID,'%s\n');
+fclose(fileID);
 
-%  Step 1: Clinician specifies processing parameters and selects stimfile
+fileID = fopen([directories.textfilesdir '/gen_selection.txt'],'r'); 
+subj.proc_rec_sel = fscanf(fileID,'%s\n');
+fclose(fileID);
 
-%  Create the MAIN PANEL (mp)
+subj.date = '160314';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  CREATING THE INTERFACE
+
+%  Create the MAIN PANEL
 mp.f = figure('Name', 'CVR Menu',...
                     'Visible','on',...
                     'Position',[25,750,300,700],...
                     'numbertitle','off');
 
-%  Descriptive text for the processing dropdown menu                
-mp.text(1) = uicontrol('Style','text',...
-                'units','normalized',...
-                'Position',[0.2,0.59,0.6,0.1],...
-                'String','Apply pre-processing?');
+%  Create refresh button.
+mp.again = uicontrol('Style','pushbutton',...
+                    'Visible','on',...
+                    'Enable','on',...
+                    'Value',0,'Position',[260,665,30,30],...
+                    'callback',@run_again);     
+                
+icon=imread([directories.matlabdir '/refresh.png']);
+set(mp.again,'CData',icon);              
 
-%  Descriptive text for subject name               
+%  Subject name            
 mp.text(1) = uicontrol('Style','text',...
-                'units','normalized',...
-                'Position',[0.2,0.8,0.6,0.15],...
-                'String',['Subject name: ' subj.name]);
-            
- %  User prompt              
-mp.text(4) = uicontrol('Style','text',...
-                'units','normalized',...
-                'Position',[0.2,0.75,0.6,0.15],...
-                'String',['Breathhold: ' subj.breathhold]);           
+                        'units','normalized',...
+                        'Position',[0.2,0.8,0.6,0.15],...
+                        'String',['Subject name: ' subj.name]);
+
+ %  Subject breathhold             
+mp.text(2) = uicontrol('Style','text',...
+                        'units','normalized',...
+                        'Position',[0.2,0.75,0.6,0.15],...
+                        'String',['Study: ' subj.breathhold]);           
 
 %  Descriptive text for the stimfile selection dropdown menu                        
-mp.text(2) = uicontrol('Style','text',...
-                    'units','normalized',...
-                    'Position',[0.2,0.72,0.6,0.1],...
-                    'String','Select stimfile');
+mp.text(3) = uicontrol('Style','text',...
+                        'units','normalized',...
+                        'Position',[0.2,0.72,0.6,0.1],...
+                        'String','Select stimfile');
                 
-% %  Descriptive text for the breathhold selection dropdown menu
-% mp.text(3) = uicontrol('Style','text',...
-%                        'units','normalized',...
-%                        'Position',[0.2,0.59,0.6,0.1],...
-%                        'String','Select breath hold');
-        
-%  Popupmenus to select processing options and stimfile to generate map
+%  Descriptive text for the processing dropdown menu                
+mp.text(4) = uicontrol('Style','text',...
+                        'units','normalized',...
+                        'Position',[0.2,0.59,0.6,0.1],...
+                        'String','Select data to view');                
 
-mp.STR = {'','boxcar','pf'}; % String for stimfile popup
-mp.STR2 = {'','yes','no'}; % String for pre-processing popup
-% mp.STR3 = {'','BH1','BH2','HV'}; % String for breathhold popup
+%  Descriptive text for the stimfile selection dropdown menu                        
+mp.text(5) = uicontrol('Style','text',...
+                        'units','normalized',...
+                        'Position',[0.2,0.46,0.6,0.1],...
+                        'String','Select glm bucket');                          
 
-%  Create menu for pre-processing (options are yes or no)
-mp.menu(2) = uicontrol('Style','popupmenu',...
-                'Visible','on',...
-                'String',mp.STR2,...
-                'Position',[50,395,200,60]);
+%  Establishing what should be in stimfile dropdown based on what stimfiles
+%  have been used for subject's breathhold analysis
+C{1} = '';
+if exist(['data/analyzed_standard_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2     
+    C{2} = 'Standard Boxcar';
+    if exist(['data/analyzed_shifted_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+        C{3} = 'Shifted Boxcar';
+        if exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2     
+            C{4} = 'Customized Boxcar';
+            if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+                C{5} = 'Cerebellum';
+            end
+        end
+    elseif exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+        C{3} = 'Customized Boxcar';
+        if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+            C{4} = 'Cerebellum';
+        end
+    elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+            C{3} = 'Cerebellum';
+    end
+elseif exist(['data/analyzed_shifted_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+    C{2} = 'Shifted Boxcar';
+    if exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2     
+        C{3} = 'Customized Boxcar';
+        if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+            C{4} = 'Cerebellum';
+        end
+    elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+            C{3} = 'Cerebellum';
+    end
+elseif exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+    C{2} = 'Customized Boxcar';
+    if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+            C{3} = 'Cerebellum';
+    end
+elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+            C{2} = 'Cerebellum';
+end
  
 %  Create menu for stimfile selection (options are boxcar or pf)
 mp.menu(1) = uicontrol('Style','popupmenu',...
                         'Visible','on',...
                         'Enable','off',...
-                        'String',mp.STR,...
+                        'String',C,...
                         'Position',[50,485,200,60]);
-% 
-% %  Create menu for breathhold selection (options are BH1,BH2,HV)
-% mp.menu(3) = uicontrol('Style','popupmenu',...
-%                        'Visible','on',...
-%                        'Enable','off',...
-%                        'String',mp.STR3,...
-%                        'Position',[50,395,200,60]);
 
+%  Create menu for pre-processing (options are pre-processed or raw)
+mp.menu(2) = uicontrol('Style','popupmenu',...
+                    'Visible','on',...
+                    'Enable','off',...
+                    'String',{'','pre-processed','raw'},...
+                    'Position',[50,395,200,60]);
+
+mp.STR3 = {'','coefficient','t-statistic','R2'}; % String for glm bucket                    
+%  Create menu for glm bucket selection (options are t-statistic,coefficient,R2)
+mp.menu(3) = uicontrol('Style','popupmenu',...
+                        'Visible','on',...
+                        'Enable','off',...
+                        'String',mp.STR3,...
+                        'Position',[50,305,200,60]);                    
+                    
 %  Toggle button to overlay CVR map
 mp.CVRb = uicontrol('Style','togglebutton',...
                 'Visible','on',...
                 'String','Overlay CVR map',...
                 'Enable','off',...
-                'Value',0,'Position',[20,300,150,60],...
-                'callback',@pushstate);
-                       
-%  Toggle button to allow user to start program again using a different
-%  method
-mp.program_again = uicontrol('Style','togglebutton',...
-                    'Visible','on',...
-                    'String','Use another method',...
-                    'Enable','off',...
-                    'Value',0,'Position',[75,150,150,60],...
-                    'callback',@run_again);
+                'Value',0,'Position',[20,210,150,60],...
+                'callback',@pushstate);              
                 
-%  Button to terminate the program (close all windows)
-mp.quit = uicontrol('Style','togglebutton',...
+%  Button to go back to SickKids_CVR.m
+mp.quit = uicontrol('Style','pushbutton',...
                     'Visible','on',...
-                    'String','End CVR program',...
-                    'Value',0,'Position',[75,50,150,60],...
-                    'callback',@quit_program);
+                    'String','DONE',...
+                    'Value',0,'Position',[75,20,150,60],...
+                    'callback',@go_to_main);
                 
 %  Descriptive text for t_stat slider 
 mp.t_text = uicontrol('Style','text',...
                     'units','normalized',...
                     'String','Threshold value: ',...
-                    'position',[0.05 0.33 0.5 0.05]);  
+                    'position',[0.05 0.20 0.5 0.05]);  
 
 %  Text that displays the t_stat slider value
 mp.t_number = uicontrol('Style','text',...
                         'units','normalized',...
                         'String',0,...
-                        'position',[0.49 0.33 0.18 0.05]);
+                        'position',[0.49 0.20 0.18 0.05]);                   
                     
-%  Slider bar to adjust the t_stat for CVR map
-mp.t = uicontrol('Style','slider',...
-                'Min',0,'Max',1,...
-                'units','normalized',...
-                'Enable','off',...
-                'SliderStep',[0.0001,0.001],...
-                'position',[0.70 0.34 0.25 0.2],...
-                'callback',{@t_slider,mp});
-            
+%  Descriptive text for p-value
+mp.p_text = uicontrol('Style','text',...
+                    'units','normalized',...
+                    'String','P-value: ',...
+                    'position',[0.05 0.17 0.5 0.05]);  
+
+%  Text that displays the p-value
+mp.p_number = uicontrol('Style','text',...
+                        'units','normalized',...
+                        'String',0,...
+                        'position',[0.49 0.17 0.18 0.05]);                                   
+           
 set(mp.f, 'MenuBar', 'none'); % remove the menu bar 
 set(mp.f, 'ToolBar', 'none'); % remove the tool bar 
-            
 
 s = ['data/recon/' subj.name '/' subj.name '_anat_brain.nii'];
 fname_anat = s;
 
 anat = load_nii([directories.subject '/' fname_anat]); % Load the subject's 3D skull stripped anatomical 
 [anat.x,anat.y,anat.z] = size(anat.img);
+
+%  Slider bar to adjust the t_stat for CVR map
+mp.t = uicontrol('Style','slider',...
+                'Min',0,'Max',1,...
+                'units','normalized',...
+                'Enable','off',...
+                'SliderStep',[0.0001,0.001],...
+                'position',[0.70 0.21 0.25 0.2],...
+                'callback',{@t_slider,mp,anat}); 
 
 %  CONSTRUCTING ANATOMICAL SLICES
 
@@ -182,24 +241,33 @@ anat.yrange = (1:anat.y);
 anat.zrange = (1:anat.z); 
 
 %  Adjusting the contrast of the anatomical scans (shrink the window of the range of values)
-anat.sigmin = 10; 
-anat.sigmax = 300; % make this user driven (used to be 500)
+global sigmin;
+global sigmax;
+
+fileID = fopen([directories.textfilesdir '/sigvals.txt'],'r'); 
+format = '%d\n';
+sigmin = fgetl(fileID);
+sigmax = fgetl(fileID);
+fclose(fileID);
+
+sigmin = str2double(sigmin);
+sigmax = str2double(sigmax);
 
 %  Preparing slices to be displayed in each dimension 
 %  AXIAL slice
-anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
 anat.slice_ax = imresize(anat.slice_ax,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
 anat.slice_ax = rot90(anat.slice_ax(anat.xrange,anat.yrange,:));
 anat.slice_ax = flip(anat.slice_ax,2);
 
 %  CORONAL slice
-anat.slice_cor = (double(repmat(imresize(squeeze(anat.img(:,anat.slice_y,:)),[anat.x anat.z]), [1 1 3])) - anat.sigmin) / anat.sigmax;
+anat.slice_cor = (double(repmat(imresize(squeeze(anat.img(:,anat.slice_y,:)),[anat.x anat.z]), [1 1 3])) - sigmin) / sigmax;
 anat.slice_cor = imresize(anat.slice_cor,[anat.x anat.z/anat.hdr.dime.pixdim(2)]);
 anat.slice_cor = rot90(anat.slice_cor(anat.xrange,anat.zrange,:));
 anat.slice_cor = flip(anat.slice_cor,2);
 
 %  SAGITTAL slice
-anat.slice_sag = (double(repmat(imresize(squeeze(anat.img(anat.slice_x,:,:)),[anat.y anat.z]), [1 1 3])) - anat.sigmin) / anat.sigmax;
+anat.slice_sag = (double(repmat(imresize(squeeze(anat.img(anat.slice_x,:,:)),[anat.y anat.z]), [1 1 3])) - sigmin) / sigmax;
 anat.slice_sag = imresize(anat.slice_sag,[anat.y anat.z/anat.hdr.dime.pixdim(3)]);
 anat.slice_sag = rot90(anat.slice_sag(anat.yrange,anat.zrange,:));
 anat.slice_sag = flip(anat.slice_sag,2);
@@ -208,33 +276,44 @@ anat.slice_sag = flip(anat.slice_sag,2);
 
 set(mp.menu(1),'Enable','on'); % enable stimfile selection dropdown
 waitfor(mp.menu(1),'Value'); % wait for user response
+
+if strcmp(mp.menu(1).String(mp.menu(1).Value),'Standard Boxcar') == 1
+    flirtext = 'standard_boxcar';
+    stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'];
+elseif strcmp(mp.menu(1).String(mp.menu(1).Value),'Shifted Boxcar') == 1
+    flirtext = 'shifted_boxcar';
+    stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_shifted.1D'];
+elseif strcmp(mp.menu(1).String(mp.menu(1).Value),'Customized Boxcar') == 1
+    flirtext = 'customized_boxcar';
+    stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D'];
+elseif strcmp(mp.menu(1).String(mp.menu(1).Value),'Cerebellum') == 1    
+    flirtext = 'pf';
+    stim = [directories.metadata '/stim/pf_stim_processed.1D'];
+end
+
+montage_info = flirtext;
+
+if exist(['data/analyzed_' flirtext '_raw/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+    set(mp.menu(2),'String',{'','pre-processed','raw'}); % String for pre-processing popup
+    flirtext = [flirtext '_raw'];
+else 
+    set(mp.menu(2),'String',{'','pre-processed'});
+end
+
 set(mp.menu(1),'Enable','off'); % disable stimfile selection dropdown 
 set(mp.menu(2),'Enable','on'); % enable processing selection dropdown 
 waitfor(mp.menu(2),'Value'); % wait for user response 
 set(mp.menu(2),'enable','off'); 
+set(mp.menu(3),'Enable','on'); % enable glm selection dropdown
+waitfor(mp.menu(3),'Value'); % wait for user response
+set(mp.menu(3),'Enable','off'); % disable glm selection dropdown 
 
-fileID = fopen([directories.subject '/textfiles/standard_shifted_customized.txt'],'r'); % read from customize_boxcar text file 
-format = '%d';
-standard_shifted_custom = fscanf(fileID,format);
-fclose(fileID);
-
-fileID = fopen([directories.subject '/textfiles/stimsel.txt'],'r');
-format = '%d\n';
-stimsel = fscanf(fileID,format);
-fclose(fileID);
-
-if stimsel == 2
-    prefix = 'BH';
-elseif stimsel == 3
-    prefix = 'GA';
-end
-
-if(standard_shifted_custom == 1) % customized boxcars were created for some or all breathholds 
-    placeholder = [prefix '_standard'];
-elseif standard_shifted_custom == 2
-    placeholder = [prefix '_shifted'];
-elseif standard_shifted_custom == 2
-    placeholder = [prefix '_customized'];
+if strcmp(mp.menu(3).String(mp.menu(3).Value),'t-statistic') == 1
+    funct_name = 'tstat';
+elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'coefficient') == 1
+    funct_name = 'coeff';
+elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'R2') == 1
+    funct_name = 'R2';
 end
 
 fileID = fopen([directories.subject '/textfiles/processing.txt'],'w+'); % open the file that indicates whether or not to do processing 
@@ -250,42 +329,22 @@ elseif(mp.menu(2).Value == 3) % if the user chooses to display the raw data, wri
     display('no processing');
 end
 
-if(mp.menu(1).Value == 2) % boxcar was selected as stimfile option by user on the GUI 
-    show_boxcar_string = ['Boxcar selection: ' placeholder]; % indicate to the user if the boxcar for that breathhold is the standard boxcar or customized
-    
-%  Text that displays the boxcar selection (standard/customized). Shows up
-%  once the breathhold has been selected, and if pf is not selected as the
-%  stimfile
-mp.boxcarsel = uicontrol('Style','text',...
-                        'units','normalized',...
-                        'String',show_boxcar_string,...
-                        'position',[0.15,0.54,0.7,0.05]); 
-end
+type = flirtext;
 
-switch(mp.menu(1).Value) % stimfile menu selection
-    case(2) % stimfile selection is boxcar 
-        if (mp.menu(2).Value == 2) % processed data 
-            type = [placeholder '_boxcar']; 
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
-        elseif(mp.menu(2).Value == 3) % raw data 
-            type = [placeholder '_boxcar_raw'];
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
-        end    
-        montage_info = [placeholder '_boxcar']; % variable used in make_montage.m to find the correct REDCap text file 
-        
-    case(3) % stimfile selection is pf 
-        if (mp.menu(2).Value == 2) % processed data 
-            type = 'pf';
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
-        elseif(mp.menu(2).Value == 3) % raw data
-            type = 'pf_raw';
-            functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_FIVE_anat_space.nii'];
-        end    
-        montage_info = 'pf';
-end
+functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_' funct_name '_anat_space.nii'];
 
 %  Load the functional file that was transformed to anatomical space 
 funct.mapped_anat = load_nii([directories.subject '/' functional_data]);
+
+max_funct = max(funct.mapped_anat.img(:));
+min_funct = min(funct.mapped_anat.img(:));
+
+thresh_near = max(abs(max_funct),abs(min_funct));
+
+thresh_near = round(thresh_near,3);
+
+set(mp.t,'Max',thresh_near);
+set(mp.t,'SliderStep',[thresh_near/1000,thresh_near/100]);
 
 %  DISPLAY THE SLICES IN WINDOWS
 %  AXIAL WINDOW
@@ -310,7 +369,7 @@ ax_window.drawROI = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Draw ROI',...
                                 'Value',0,'Position',[300,30,150,75],...
-                                'Callback',{@drawROI,anat,directories,subj,mp}); 
+                                'Callback',{@drawROI,anat,directories,subj,mp,stim}); 
 
 %  Text that describes regional mask dropdown
 ax_window.regional_mask_text = uicontrol('Style','text',...
@@ -321,9 +380,26 @@ ax_window.regional_mask_text = uicontrol('Style','text',...
 %  Create menu for selecting pre-determined ROI to pull the timeseries 
 ax_window.predetermined_ROI = uicontrol('Style','popupmenu',...
                                 'Visible','on',...
-                                'String',{'None','Remove Ventricles and Venosinuses','Only White Matter','Only Gray Matter','Only Cerebellum'},...
-                                'Position',[500,2,235,75],...
-                                'callback',{@predetermined_ROI,anat,funct,directories,mp,subj});
+                                'String',{'Remove Ventricles and Venosinuses','Only White Matter','Only Gray Matter','Only Cerebellum','None'},...
+                                'Position',[500,25,235,50],...
+                                'callback',{@predetermined_ROI,anat,funct,directories,mp,subj,stim});
+
+global onlypositive;
+global onlynegative;
+onlypositive = 1;
+onlynegative = 1;
+
+ax_window.positive_map = uicontrol('Style','checkbox',...
+                                   'String','Positive',...
+                                   'Value',1,...
+                                   'Position', [500,10,100,20],...
+                                   'Callback',@positive_map);
+
+ax_window.negative_map = uicontrol('Style','checkbox',...
+                                   'String','Negative',...
+                                   'Value',1,...
+                                   'Position',[650,10,100,20],...
+                                   'Callback',@negative_map);
                             
 %  Slider to control axial slice position                       
 ax_window.slider = uicontrol('style', 'slider',...
@@ -422,4 +498,3 @@ imshow(anat.slice_sag);
 
 set(mp.CVRb,'enable','on'); % enable the button for user to overlay CVR maps on to anatomical slices 
 set(mp.t,'enable','on'); % enable t_stat slider 
-set(mp.program_again,'enable','on'); % allow user to run the program again to select different parameters 

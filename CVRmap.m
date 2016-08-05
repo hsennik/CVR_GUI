@@ -1,4 +1,4 @@
-function CVRmap(dimension,anat,funct,mp,sliceval,det_functionality,gen_file_location,mask_name)
+function CVRmap(dimension,anat,funct,mp,sliceval,det_functionality,gen_file_location,mask_name,subj)
 % Function to generate CVR map 
 % 
 % INPUTS 
@@ -22,6 +22,10 @@ function CVRmap(dimension,anat,funct,mp,sliceval,det_functionality,gen_file_loca
 global ax_slider_value;  
 global cor_slider_value;
 global sag_slider_value;
+global sigmin;
+global sigmax;
+global onlypositive;
+global onlynegative;
 
 ROImask = 0;
 
@@ -48,7 +52,7 @@ elseif strcmp(dimension,'saggital') == 1 %  if the saggital slider is moved
     range2 = anat.zrange;
 end
 
-if det_functionality == 1 %  if the montage button is pressed
+if strcmp(gen_file_location,'') == 0 %  if the montage button is pressed
     slice = sliceval; %  the slice is increased in increments of six to create a montage of 25 axial slices 
     display(slice);
     display('first');
@@ -60,18 +64,20 @@ end
 if strcmp(mask_name,'') == 0 && strcmp(mask_name,'None') == 0
     ROImask = 1;
     display('masked');
-    slice = floor(ax_slider_value);
+    if strcmp(gen_file_location,'') == 1
+        slice = floor(ax_slider_value);
+    end     
 end
 
 %  Anatomical data 
 if strcmp(dimension,'axial') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,:,slice)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(1)]);
 elseif strcmp(dimension,'coronal') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(:,slice,:)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
 elseif strcmp(dimension,'saggital') == 1
-    updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-anat.sigmin) / anat.sigmax;
+    updated_slice = (double(repmat(imresize(squeeze(anat.img(slice,:,:)),[dim1 dim2]),[1 1 3]))-sigmin) / sigmax;
     updated_slice = imresize(updated_slice,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
 end
 updated_slice = rot90(updated_slice(range1,range2,:)); % Rotate and flip the slice so that it is displayed correctly to the user 
@@ -81,29 +87,54 @@ updated_slice = flip(updated_slice,2);
 if strcmp(dimension,'axial') == 1
     funct.mask = double(imresize(squeeze(funct.mapped_anat.img(:,:,slice)),[dim1 dim2],'nearest'));
     funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(1)]);
-elseif strcmp(dimension,'coronal') == 1
-    funct.mask = double(imresize(squeeze(funct.mapped_anat.img(:,slice,:)),[dim1 dim2],'nearest'));
-    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
-elseif strcmp(dimension,'saggital') == 1
-    funct.mask = double(imresize(squeeze(funct.mapped_anat.img(slice,:,:)),[dim1 dim2],'nearest'));
-    funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
+    funct.mask = rot90(funct.mask(range1,range2,:));
+    funct.mask = flip(funct.mask,2);
+elseif strcmp(dimension,'coronal') == 1 || strcmp(dimension,'saggital') == 1
+    mask_CSF = load_nii(['data/recon/' subj.name '/' subj.name '_anat_brain_seg_0.nii']);
+    if strcmp(dimension,'coronal') == 1
+        masked_slice = double(repmat(imresize(squeeze(mask_CSF.img(:,slice,:)),[anat.x anat.z]), [1 1 3]));
+        masked_slice = imresize(masked_slice,[anat.x anat.z/anat.hdr.dime.pixdim(2)]);
+        masked_slice = rot90(masked_slice(anat.xrange,anat.zrange,:));
+        masked_slice = flip(masked_slice,2);
+        funct.mask = double(imresize(squeeze(funct.mapped_anat.img(:,slice,:)),[dim1 dim2],'nearest'));
+        funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(2)]);
+        funct.mask = rot90(funct.mask(range1,range2,:));
+        funct.mask = flip(funct.mask,2);
+    elseif strcmp(dimension,'saggital') == 1
+        masked_slice = double(repmat(imresize(squeeze(mask_CSF.img(slice,:,:)),[anat.y anat.z]), [1 1 3]));
+        masked_slice = imresize(masked_slice,[anat.y anat.z/anat.hdr.dime.pixdim(3)]);
+        masked_slice = rot90(masked_slice(anat.yrange,anat.zrange,:));
+        masked_slice = flip(masked_slice,2);
+        funct.mask = double(imresize(squeeze(funct.mapped_anat.img(slice,:,:)),[dim1 dim2],'nearest'));
+        funct.mask = imresize(funct.mask,[dim1 dim2/anat.hdr.dime.pixdim(3)]);
+        funct.mask = rot90(funct.mask(range1,range2,:));
+        funct.mask = flip(funct.mask,2);
+    end
+    
+    masked_slice = imcomplement(masked_slice);
+    BW = im2bw(masked_slice);
+    funct.mask = funct.mask.*BW;
 end
 
-funct.mask = rot90(funct.mask(range1,range2,:));
-funct.mask = flip(funct.mask,2);
-
 if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
-    masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+    masked_slice = double(repmat(imresize(squeeze(det_functionality(:,:,slice)),[anat.x anat.y]), [1 1 3]));
     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
     masked_slice = flip(masked_slice,2);
     
-    if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
-        level = 0;
-    else
-        level = 0.15;
-    end
-    BW = im2bw(masked_slice,level);
+%     if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
+%         level = 0;
+%     else
+%         level = 0.15;
+%     end
+
+if strcmp(mask_name,'Remove Ventricles and Venosinuses') == 1
+    masked_slice = imcomplement(masked_slice);
+end
+ BW = im2bw(masked_slice);
+ 
+%     funct.mask = funct.mask.*BW;
+
     funct.mask = funct.mask.*BW;
 end
 
@@ -115,6 +146,40 @@ thresh_values = thresh_vec(thresh_indices); % place the values at specified arra
 redImg = updated_slice(:,:,1);
 greenImg = updated_slice(:,:,2);
 blueImg = updated_slice(:,:,3);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% anat_img  exists
+% 
+% 
+% overlay image
+% 
+% % [x y z C]
+% overlay_rgb = zeros(size(anat_img));
+% 
+% pos_rgb_ind = 1;
+% neg_rgb_ind = 3;
+% 
+% find pos/neg in vector format then overwrite
+% [pos_ind, pos_values] = find (...);
+% 
+% 
+% %%% MERGING
+% img_display = anat_img;   % create underlay
+% 
+% if pos_check
+%     img_display(pos_ind, pos_rgb_ind) = pos_values;
+% end
+% if neg_check
+%     img_display(neg_ind, neg_rgb_ind) = neg_values;
+% end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 
 %  Find positive values 
 positive = find(thresh_values > mp.t.Value); %  find indices of positive values 
@@ -128,8 +193,16 @@ max_negative_value = min(negative_values); %  find max negative value and its in
 min_negative_value = max(negative_values); %  find the min negative value 
 
 %  Differences between max and min values (for normalization)
-neg_diff = max_negative_value - min_negative_value;
-pos_diff = max_positive_value - min_positive_value;
+if isempty(negative)
+    neg_diff = 0;
+else
+    neg_diff = max_negative_value - min_negative_value;
+end
+if isempty(positive)
+    pos_diff = 0;
+else
+    pos_diff = max_positive_value - min_positive_value;
+end
 
 AUTO = 1;
 
@@ -147,15 +220,33 @@ normalized_negative = (negative_values - min_negative_value)/(-norm_denom);
 
 multiplier = 7; %  necessary to avoid green showing up in CVR map 
 
-redImg(positive) = (1 - normalized_positive)*multiplier; %  Red is associated with positive correlation 
-redImg(negative) = 0;
-greenImg(positive) = normalized_positive; %  Add in green channel so that there is colour variation 
-greenImg(negative) = normalized_negative;
-blueImg(positive) = 0;
-blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
+if onlypositive == 1 && onlynegative == 0
+    if ~isempty(positive)
+        redImg(positive) = (1 - normalized_positive)*multiplier; %  Red is associated with positive correlation 
+        greenImg(positive) = normalized_positive; %  Add in green channel so that there is colour variation 
+        blueImg(positive) = 0;
+    end
+elseif onlynegative == 1 && onlypositive == 0
+    if ~isempty(negative)
+        redImg(negative) = 0;
+        greenImg(negative) = normalized_negative;
+        blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
+    end
+elseif onlypositive == 1 && onlynegative == 1
+    if ~isempty(positive)
+        redImg(positive) = (1 - normalized_positive)*multiplier; %  Red is associated with positive correlation 
+        greenImg(positive) = normalized_positive; %  Add in green channel so that there is colour variation 
+        blueImg(positive) = 0;
+    end
+    if ~isempty(negative)
+        blueImg(negative) = (1 - normalized_negative)*multiplier; %  Blue is associated with negative correlation 
+        redImg(negative) = 0;
+        greenImg(negative) = normalized_negative;
+    end
 
+end 
 % if ((ROImask == 1) && (strcmp(dimension,'axial') == 1)) || ((strcmp(mask_name,'') == 0) && (strcmp(mask_name,'None') == 0))
-%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- anat.sigmin) / anat.sigmax ;
+%     masked_slice = (double(repmat(imresize(squeeze(det_functionality(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
 %     masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
 %     masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
 %     masked_slice = flip(masked_slice,2);
@@ -180,9 +271,9 @@ rgbImage = cat(3,redImg,greenImg,blueImg); %  concatenate the red, green, and bl
 
 sliceval = int2str(sliceval); %  converting sliceval for montage to a string
 
-if det_functionality == 1
+if strcmp(gen_file_location,'') == 0
     imwrite(rgbImage,[gen_file_location 'slice' sliceval '.jpg']); %  write the image to a jpeg to be used in montage 
-else
+else 
     imshow(rgbImage); %  display the anatomical overlain with CVR map 
 end
 

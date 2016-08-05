@@ -1,0 +1,38 @@
+########################################################
+#### Process Pipeline information file #################
+########################################################
+fname_pipeline := CVR			# Name of the data information file 
+pipeline_id := CVR_160314			    # Process Pipeline ID 
+pipeline_descrip := all processed CMT data  # short one line description of the pipeline
+dir_dcm_base :=  /data/projects/CVR/GUI_subjects/Kumar16                  # Base directory for raw dicom files 
+dir_analyzed := /data/projects/CVR/GUI_subjects/Kumar16/data/analyzed     # Output directory base, final directory = output_dir/<pipeline_id>/<subject_id>
+dir_processed := /data/projects/CVR/GUI_subjects/Kumar16/data/processed           # Output directory base, final directory = output_dir/<pipeline_id>/<subject_id>
+dir_recon := /data/projects/CVR/GUI_subjects/Kumar16/data/recon          # Output directory base for recon
+pipeline_order := trim,mc,st,tfilt,sm,reg #      # Processing pipeline steps to run, comma separated and in order
+dcm_type := 4Ddcm                          # Dicom organization [single - one dcm file for all slices; dir - directory of dcm files for all slices; 4Ddcm - 1 dcm file per fmri scan]
+file_type := .nii                            # What file type to use [.nii, +orig]
+#### fMRI DATA INFO ####################################
+fmri_order := tz                                # dcm slice order [tz, zt]
+fmri_nz := 25                                   # Number of slices
+fmri_nt := 180                                # Number of TR
+fmri_TR := 2                             # TR (s)
+fmri_sliceorder := seqplus                           # Slice order (AFNI terminology, ie. seqplus)
+#### GLM Analysis (glm) #########################
+glm_enable := 1                                        # Run GLM Analysis?
+glm_dir_stim := /data/projects/CVR/GUI_subjects/Kumar16/metadata/stim        # Directory of stimuli
+glm_stim_model := 1D             # What stimulus model to use ('1D' - stim file is a full 1D file; or AFNI type ie. BLOCK(20,1))
+glm_stim_per_subj := no                     # Separate Stimulus per subject? [yes/no]
+glm_stim_per_run := no                    # Separate Stimulus per run? [yes/no]
+glm_stim_suffix :=     # List of stimulus names bhonset.1D   (where approporiate <subj>_<run>_<suffix>)
+glm_stim_censor_enable := 0               # turn off/on stim censoring, for example in event-related motion-coupled tasks
+glm_stim_censor :=          # file to censor certain TRs (for example to censor event-related motion in foot-flexion task) - will be multiplied with motion-censor file
+glm_stim_grouping := all                    # How to group stimuli (single - separate analysis for each stim; all - combined analysis for all stim)
+glm_roi_type := none                               # What type of ROI regression [none, subj, group]
+glm_roi_dir :=       # Base directory of 4D  ROI mask (for subj specific ROIs, assumes common directory ie. <roi_dir>)
+glm_roi_fname := test                               # Filename for 4D ROI masks (for subj specific ROIs,  this is a prefix ie. <subj>_<roi_fname><file_type>
+glm_roi_list := MFG_L,MFG_R,ACC                   # List of ROI names
+glt_enable := 1                                        # Run GLTs (0 to turn off)?
+glt_dir := /data/hannahsennik/CVR/metadata/glts                      # Source file for GLT matrix
+glt_labels := onvsoff # GLT labels
+concat_enable := 0
+#### End of File #######################################

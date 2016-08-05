@@ -1,28 +1,36 @@
-function drawROI_copy(source,callbackdata,anat,directories,subj,main_GUI,breathhold,funct)
+function drawROI_copy(source,callbackdata,anat,directories,subj,main_GUI,funct)
+% Function to draw an ROI and extract the timeseries to make boxcar
+% adjustments 
+% 
+% INPUTS 
+%     anat - subject's anatomical data
+%     directories - all of the directories for the subject
+%     subj - subject data (name,date,breathhold)
+%     main_GUI - has all gui data from the main interface
+%     funct - functional subject data  (need the time)
+% 
+% *************** REVISION INFO ***************
+% Original Creation Date - July 5, 2016
+% Author - Hannah Sennik
 
-global ax_slider_value;
+global ax_slider_value; % axial slider value 
 
-tag = 'processed';
+tag = 'processed'; % pulling timeseries from the processed data 
 
+%  Close all other timeseries windows that are open 
 close(findobj('type','figure','name',['Timeseries: ' subj.breathhold]));
-
-addpath('/data/wayne/matlab/NIFTI'); % add path to nii functions
-addpath('/data/wayne/matlab/general');
-
-cd(directories.subject); % change in to subject's directory 
-
-directories.timeseries = 'timeseries';
-mkdir(directories.subject, ['/' directories.timeseries]); % make a directory to save ROI mask and timeseries text file 
+close(findobj('type','figure','name',['Create customized boxcar for: ' subj.breathhold]));
+close(findobj('type','figure','name',['Timeseries vs. Customized Boxcar: ' subj.breathhold]));
 
 data_out = anat; % creating a struct with same header info as anat (this will be used for the mask)
 
-[funct.x,funct.y,funct.z] = size(funct.img);
+[funct.x,funct.y,funct.z] = size(funct.img); % getting the dimensions of the functional data 
 
 z_index = floor(ax_slider_value); % get the z index for the mask 
 
 h = imfreehand('Closed','True'); % user draws freehand ROI 
 binaryImage = h.createMask(); % create a mask from the ROI 
-binaryImage = flip(binaryImage,2);
+binaryImage = flip(binaryImage,2); % flip and rotate the mask for viewing purposes 
 binaryImage = rot90(binaryImage(anat.xrange,anat.yrange,:),3);
 
 new = zeros(size(anat.img)); % create new img the size of anat, fill with zeros
@@ -35,92 +43,33 @@ save_nii(data_out,save_mask);
 
 display('nii mask saved');
 
-stim = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'];
+stim = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D']; % standard stimulus file 
 
-copyfile(['data/recon/' subj.name '/' subj.name '_anat_' subj.breathhold '.xfm'], [directories.timeseries '/anat2' subj.breathhold '.xfm']);
+copyfile(['data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm'], [directories.timeseries '/anat2' subj.proc_rec_sel '.xfm']); % copy the transformation matrix for anatomical to functional space
 
 % Transform the mask from anatomical space to functional space - save as
 % finalmask.nii 
-command = ['flirt -in ' directories.timeseries '/mask.nii -ref data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii -out ' directories.timeseries '/finalmask.nii -init ' directories.timeseries '/anat2' subj.breathhold '.xfm -applyxfm'];
+command = ['flirt -in ' directories.timeseries '/mask.nii -ref data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.timeseries '/finalmask.nii -init ' directories.timeseries '/anat2' subj.proc_rec_sel '.xfm -applyxfm'];
 status= system(command);
 
 % Use 3dmaskave to mask the functional data with finalmask.nii and save the
 % timeseries to timeseries.1D in timeseries directory 
-command = ['3dmaskave -q -mask timeseries/finalmask.nii data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii > timeseries/timeseries.1D'];
+command = ['3dmaskave -q -mask timeseries/finalmask.nii data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii > ' directories.timeseries '/timeseries.1D'];
 status = system(command);
 
-%  Load in the 1D timeseries file and display as plot 
+%  Initialize the variables to be passed into the plotfiles function 
 timeseries = [directories.subject '/timeseries/timeseries.1D'];
-timeseries_plot = load(timeseries);
-
-stimfile = load(stim); % load the stimfile used to generate the parametric map 
-stimfile = stimfile/10;
-stimfile = stimfile + (median(timeseries_plot) - median(stimfile)) + 50; % move the plot up so that user can easily compare timeseries and stim
-
-ts.f = figure('Name',['Timeseries: ' subj.breathhold],...
-       'Visible','on',...
-       'Numbertitle','off',...
-       'Position', [950,800,600,500]);
-
-set(ts.f, 'MenuBar', 'none'); % remove the menu bar 
-set(ts.f, 'ToolBar', 'none'); % remove the tool bar     
-
-starting_value = 0;    
-
-timeplot = plot(timeseries_plot,'Linewidth',2);  % plot the timeseries from the ROI 
-title('Timeseries vs. Stimulus')
-xlabel('Scan Time')
-ylabel('BOLD Signal')
-hold; % hold the plot 
-
-stimplot = plot(stimfile,'Color','red','Linewidth',2); 
-
-legend('Timeseries from ROI','Standard Boxcar');
-
-ax = gca;
-ax.XTick = [0 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180];
+pos = [965,800,900,670];
+figname = ['Timeseries: ' subj.breathhold];
+timeseries_name = 'Timeseries from drawn ROI';
+boxcar_name = 'Standard Boxcar';
 
 if main_GUI.boxcar(2).Value == 1
-    %  Slider to control boxcar shifting                     
-    ts.shift_boxcar = uicontrol('style', 'slider',...
-                                'Min',-20,'Max',20,'Value',starting_value,... 
-                                'units', 'normalized',...
-                                'SliderStep',[1/40,10/40],...
-                                'position',[0.6 0 0.25 0.05],...
-                                'callback',{@shift_boxcar,stimfile,starting_value,funct});   
-
-    %  Create radiobuttons to select between shifted and customized boxcar (can
-    %  only choose one or the other) 
-
-    %  Checkbox for shifted boxcar
-    ts.shift_boxcar = uicontrol('Style','checkbox',...
-                                'Visible','on',...
-                                'String','Use Adjusted Boxcar',...
-                                'HandleVisibility','on',...
-                                'Position',[35,0,225,25],...
-                                'Enable','on',...
-                                'callback',{@save_shifted_to_file,subj,ts,directories,funct});
-else
-    create_boxcar(subj,directories,main_GUI,timeseries_plot);
+    shift_custom_capability = 1; % shifted was selected 
+else 
+    shift_custom_capability = 2; % customize was selected 
 end
 
-% %  Radiobutton for shifted boxcar                       
-% ts.boxcar(1) = uicontrol('Style','radiobutton',...
-%                         'Visible','on',...
-%                         'Units','pixels',...
-%                         'String','Use Adjusted Boxcar',...
-%                         'HandleVisibility','on',...
-%                         'Position',[35,15,225,25],...
-%                         'Enable','on',...
-%                         'callback',{@myRadio,subj,directories});
-% 
-% %  Radiobutton for customized boxcar
-% ts.boxcar(2) = uicontrol('Style','radiobutton',...
-%                         'Visible','on',...
-%                         'String','Create customized boxcar',...
-%                         'HandleVisibility','on',...
-%                         'Position',[35,0,225,25],...
-%                         'Enable','on',...
-%                         'callback',{@myRadio,subj,directories});                    
+plotfiles(directories,subj,timeseries,stim,pos,figname,shift_custom_capability,timeseries_name,boxcar_name,funct,main_GUI); % plot the timeseries vs. stim 
 
 end
