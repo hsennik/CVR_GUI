@@ -50,36 +50,40 @@ gen_file_location = '';
 if strcmp(mask_name,'') == 0 && strcmp(mask_name,'None') == 0
     switch mask_name
         case 'Remove Ventricles and Venosinuses'
-            mask = '';
+            mask = load_nii(['data/recon/' subj.name '/' subj.name '_anat_brain_seg_0.nii']);
         case 'Only White Matter'
-            mask = load_nii([directories.flirtdir '/standard_to_anat/white_to_anat.nii']);
+            mask = load_nii(['data/recon/' subj.name '/' subj.name '_anat_brain_seg_2.nii']);
         case 'Only Gray Matter'
-            mask = load_nii([directories.flirtdir '/standard_to_anat/gray_to_anat.nii']);
+            mask = load_nii(['data/recon/' subj.name '/' subj.name '_anat_brain_seg_1.nii']);
         case 'Only Cerebellum'
             mask = load_nii([directories.flirtdir '/standard_to_anat/cerebellum_to_anat.nii']);
     end
     if mp.CVRb.Value == 1
-        CVRmap(dimension,anat,funct,mp,sliceval,mask.img,gen_file_location,mask_name);
+        CVRmap(dimension,anat,funct,mp,sliceval,mask.img,gen_file_location,mask_name,subj);
     else
-        masked_slice = (double(repmat(imresize(squeeze(mask.img(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
+        masked_slice = double(repmat(imresize(squeeze(mask.img(:,:,floor(ax_slider_value))),[anat.x anat.y]), [1 1 3]));
         masked_slice = imresize(masked_slice,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
         masked_slice = rot90(masked_slice(anat.xrange,anat.yrange,:));
         masked_slice = flip(masked_slice,2);
-    
-        if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
-            level = 0;
-        else
-            level = 0.15;
-        end
-        BW = im2bw(masked_slice,level);
 
-        BW = cat(3,BW,BW,BW);
-        
-        updated_slice = updated_slice.*BW;
+%         if strcmp(mask_name,'Only Cerebellum') == 1 || strcmp(mask_name,'Cerebellum') == 1
+%             level = 0;
+%         else
+%             level = 0.15;
+%         end
+%         BW = im2bw(masked_slice,1);
+
+%         BW = cat(3,BW,BW,BW);
+
+        if strcmp(mask_name,'Remove Ventricles and Venosinuses') == 1
+            masked_slice = imcomplement(masked_slice);
+        end
+
+        updated_slice = updated_slice.*masked_slice;
         imshow(updated_slice);
     end
 elseif GUI == 2 && mp.CVRb.Value == 1 % If the CVR button is pressed, call the function to overlay CVR map 
-     CVRmap(dimension,anat,funct,mp,sliceval,montage,gen_file_location,mask_name);
+     CVRmap(dimension,anat,funct,mp,sliceval,montage,gen_file_location,mask_name,subj);
 else % Else, just display the anatomical slice 
     window.image = updated_slice;
     imshow(window.image);

@@ -1,28 +1,26 @@
-function viewboxcar(source,callbackdata,subj,directories,timeseries)
+function viewboxcar(source,callbackdata,subj,directories,timeseries,main_GUI,funct)
+% Function to plot the timeseries against customized boxcar
+% 
+% INPUTS 
+%     subj - subject data (name, breathhold, date)
+%     directories - all directory path info 
+%     timeseries - filepath for the .1D timeseries file 
+%     main_GUI - data from the main interface
+%     funct - functional data 
+% 
+% *************** REVISION INFO ***************
+% Original Creation Date - June 22, 2016
+% Author - Hannah Sennik
 
-pos = [400,300,600,500];
+pos = [400,300,600,500]; % position of the plot figure window 
 
-stimlocation = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D'];
-customizedbox = load(stimlocation);
-    
-view.f = figure('Name',['Timeseries vs. Customized Boxcar: ' subj.breathhold],...
-       'numbertitle','off',...
-       'Visible','on',...
-        'Position',pos); 
-set(view.f, 'MenuBar', 'none'); % remove the menu bar 
-set(view.f, 'ToolBar', 'none'); % remove the tool bar        
-    
-timeplot = plot(timeseries,'Linewidth',2);  % plot the timeseries from the ROI 
-title(['Timeseries vs. Customized Boxcar ' subj.breathhold])
-xlabel('Scan Time')
-ylabel('BOLD Signal')
-hold; % hold the plot 
+stim = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D']; % stim file location 
 
-customizedbox = customizedbox/10;
-customizedbox = customizedbox + (median(timeseries) - median(customizedbox)) + 50;
-stimplot = plot(customizedbox,'Color','red','Linewidth',2); 
+timeseries_name = 'Timeseries'; % name of timeseries for legend
+figname = ['Timeseries: ' subj.breathhold]; % plot figure name 
+shift_custom_capability = 3; % this indicates that view boxcar was pressed 
+boxcar_name = 'Customized Boxcar'; % name of boxcar for legend 
 
-legend('Timeseries from ROI','Customized Boxcar');    
-ax = gca;
-ax.XTick = [0 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180];
+plotfiles(directories,subj,timeseries,stim,pos,figname,shift_custom_capability,timeseries_name,boxcar_name,funct,main_GUI); % call the plotfiles function
+
 end

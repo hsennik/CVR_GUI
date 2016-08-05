@@ -90,21 +90,9 @@ def load_subject_list(fname_subj_list):
         # fmri_corr = create_corr_bucket(dir['gm_corr'], fmri_ortho, dir['gm_corr'], fmri + '_R2s', rois['gm'], debug)
         # create_corr_table(dir['gm_corr'], fmri_corr, dir['gm_corr'], subj + '_corr.txt', rois['gm'], debug)
         
-# Method of determining filtering method and stimfile
-with open('textfiles/mat2py.txt', 'r') as myfile:
-    temporal_filtering=myfile.readline().rstrip()
-print ('in processing pipeline')
-print temporal_filtering
-
-myfile.close
 
 #  Just doing no temporal filtering for all for now
-if temporal_filtering == '1':
-	add_suffix1 = 'mpe'
-elif temporal_filtering == '2':
-	add_suffix1 = 'mpe'
-elif temporal_filtering == '3':
-	add_suffix1 = 'mpe'
+add_suffix1 = 'none'
 
 with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
@@ -266,7 +254,6 @@ if __name__ == '__main__' :
 					print(fmri_name)
 					if fmri_name == 'CVR1' or fmri_name == 'CVR2' or fmri_name == 'CVR3':
 						pinfo.fmri_nt = 240
-						print('IN HEREERERE')
 					else:
 						pinfo.fmri_nt = 180
 					num_TR = pinfo.fmri_nt
@@ -688,5 +675,4 @@ with open(fileName,'w') as thefile:
 	thefile.write('dir_recon,' + pinfo.dir_recon + ',Recon Directory\n')
 	str1 = ';'.join(list_process)
 	thefile.write('pipeline_order,' + str1 + ',Order of processing\n')
-	thefile.write('mpr_type,' + add_suffix1 + ',Temporal Filtering Type\n')
 thefile.close

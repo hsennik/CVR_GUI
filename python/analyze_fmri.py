@@ -134,6 +134,13 @@ myfile4.close
 with open('textfiles/gen_selection.txt') as myfile5:
 	gen_selection = myfile5.readline()
 myfile5.close
+
+with open('textfiles/otherstimsel.txt') as myfile6:
+	otherstimsel = myfile6.readline()
+myfile6.close
+
+if stimulus == '3':
+	stimulus_suffix = otherstimsel
 	
 if __name__ == '__main__' :
 
@@ -223,7 +230,7 @@ if __name__ == '__main__' :
         if not pinfo.concat_enable:
 
 				
-			fmri_name = gen_selection
+			fmri_name = breathhold_selection
 			
 			# check to see if 'xxx' was entered for a run - if so, skip the run
 			# if info_subj[subj]['fmri'][fmri_name].find('xxx') > -1:
@@ -299,9 +306,11 @@ if __name__ == '__main__' :
 						pinfo.glm_stim_suffix = 'bhonset' + subj + '_' + breathhold_selection + tackon + '.1D'
 					elif stimulus == '1':
 						if processing is '0':
-							pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_raw.1D'	
+							pinfo.glm_stim_suffix = 'pf_stim_' + gen_selection + '_raw.1D'	
 						else:
-							pinfo.glm_stim_suffix = 'pf_stim_' + fmri_name + '_processed.1D'
+							pinfo.glm_stim_suffix = 'pf_stim_' + gen_selection + '_processed.1D'
+					elif stimulus == '3':
+						pinfo.glm_stim_suffix = 'bhonset' + subj + '_' + otherstimsel + '.1D'
 					print('The selected stimfile is: ' + pinfo.glm_stim_suffix)
 					fname_glm_buck, fname_glm_err = create_3dDecon(dir_subj, fname_fmri, \
 					pinfo.fmri_TR, dir_analyzed_subj, fname_fmri, dir_subj, fname_censor, \
@@ -551,7 +560,7 @@ if __name__ == '__main__' :
                 # zipping errts file
                 sys_cmd = 'gzip %s/%s%s' % (dir_analyzed_subj, fname_glm_err, pinfo.file_type)
                 check_and_run(sys_cmd, dir_analyzed_subj, fname_glm_err, pinfo.file_type + '.gz', debug)
-            
+			
 fileName = 'REDCap_import_files/all/'+ subj + '_' + stimulus_suffix + '_analyzed_parameters.txt'				
 with open(fileName,'w') as thefile:
 	thefile.write('dir_dcm_base,' + pinfo.dir_dcm_base + ',Base Directory\n')

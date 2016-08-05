@@ -14,6 +14,9 @@ function make_montage(source,callbackdata,anat,funct,mp,type,subj,directories,mo
 % Original Creation Date - June 27, 2016
 % Author - Hannah Sennik
 
+global onlypositive;
+global onlynegative;
+
 handles = guidata(source);
 %  Create directory to hold all images that will create the montage
 mkdir(directories.subject,[directories.montagedir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '/']);
@@ -21,13 +24,13 @@ gen_file_location = [directories.subject '/' directories.montagedir '/' subj.nam
 
 %  For loop to cycle through calling the function to save CVR slices
 %  as jpg
-for i = 6:6:150 % save 25 slices to create 5 by 5 montage, save every six slices 
+for i = 15:5:140 % save 25 slices to create 5 by 5 montage, save every six slices 
     anat.slice_z = i;
-    CVRmap_for_montage(anat,funct,mp,i,gen_file_location); % call the CVRmap_for_montage.m function 
+    CVRmap_for_montage(anat,funct,mp,i,gen_file_location,handles,subj); % call the CVRmap_for_montage.m function 
 end
 
 %  Generate file names for each of the CVR slice images 
-fileNames = {strcat(gen_file_location,'slice6.jpg'),strcat(gen_file_location,'slice12.jpg'),strcat(gen_file_location,'slice18.jpg'),strcat(gen_file_location,'slice24.jpg'),strcat(gen_file_location,'slice30.jpg'),strcat(gen_file_location,'slice36.jpg'),strcat(gen_file_location,'slice42.jpg'),strcat(gen_file_location,'slice48.jpg'),strcat(gen_file_location,'slice54.jpg'),strcat(gen_file_location,'slice60.jpg'),strcat(gen_file_location,'slice66.jpg'),strcat(gen_file_location,'slice72.jpg'),strcat(gen_file_location,'slice78.jpg'),strcat(gen_file_location,'slice84.jpg'),strcat(gen_file_location,'slice90.jpg'),strcat(gen_file_location,'slice96.jpg'),strcat(gen_file_location,'slice102.jpg'),strcat(gen_file_location,'slice108.jpg'),strcat(gen_file_location,'slice114.jpg'),strcat(gen_file_location,'slice120.jpg'),strcat(gen_file_location,'slice126.jpg'),strcat(gen_file_location,'slice132.jpg'),strcat(gen_file_location,'slice138.jpg'),strcat(gen_file_location,'slice144.jpg'),strcat(gen_file_location,'slice150.jpg')};
+fileNames = {strcat(gen_file_location,'slice15.jpg'),strcat(gen_file_location,'slice20.jpg'),strcat(gen_file_location,'slice25.jpg'),strcat(gen_file_location,'slice30.jpg'),strcat(gen_file_location,'slice35.jpg'),strcat(gen_file_location,'slice40.jpg'),strcat(gen_file_location,'slice45.jpg'),strcat(gen_file_location,'slice50.jpg'),strcat(gen_file_location,'slice55.jpg'),strcat(gen_file_location,'slice60.jpg'),strcat(gen_file_location,'slice65.jpg'),strcat(gen_file_location,'slice70.jpg'),strcat(gen_file_location,'slice75.jpg'),strcat(gen_file_location,'slice80.jpg'),strcat(gen_file_location,'slice85.jpg'),strcat(gen_file_location,'slice90.jpg'),strcat(gen_file_location,'slice95.jpg'),strcat(gen_file_location,'slice100.jpg'),strcat(gen_file_location,'slice105.jpg'),strcat(gen_file_location,'slice110.jpg'),strcat(gen_file_location,'slice115.jpg'),strcat(gen_file_location,'slice120.jpg'),strcat(gen_file_location,'slice125.jpg'),strcat(gen_file_location,'slice130.jpg'),strcat(gen_file_location,'slice135.jpg')};
 
 %  Create window to display montage
 montage_window.f = figure('Name', 'Montage',...  
@@ -44,8 +47,32 @@ mymontage = montage(fileNames, 'Size', [5 5]);
 directories.cliniciandir = 'clinician_final';
 mkdir(directories.subject,['/' directories.cliniciandir '/']);
 
+mask_name = handles.predetermined_ROI.String(handles.predetermined_ROI.Value);
+
+if strcmp(mask_name,'Remove Ventricles and Venosinuses') == 1
+    mask_name = 'masked_csf';
+elseif strcmp(mask_name,'Only White Matter') == 1
+    mask_name = 'whitematter';
+elseif strcmp(mask_name,'Only Gray Matter') == 1
+    mask_name = 'graymatter';
+elseif strcmp(mask_name,'Only Cerebellum') == 1
+    mask_name = 'cerebellum';
+elseif strcmp(mask_name,'None') == 1
+    mask_name = 'whole_brain';
+elseif strcmp(mask_name,'') == 1
+    mask_name = 'whole_brain';
+end
+
+if onlypositive == 1 && onlynegative == 0
+    separated = '_positive';
+elseif onlynegative == 1 && onlypositive == 0
+    separated = '_negative';
+else 
+    separated = '';
+end
+
 %  Write the montage to the clinician file
-imwrite(mymontage.CData,[directories.subject '/' directories.cliniciandir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '_final_montage.jpg']); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
+imwrite(mymontage.CData,[directories.subject '/' directories.cliniciandir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '_' mask_name separated '_montage.jpg']); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
 
 %  Display the montage in the montage window
 display('Montage saved');

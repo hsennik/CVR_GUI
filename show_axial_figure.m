@@ -13,10 +13,17 @@ function show_axial_figure(subj,directories,main_GUI,funct)
 % Original Creation Date - July 13, 2016
 % Author - Hannah Sennik
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Close all the figures except for the main GUI where all of the options
+%  are 
 close(findobj('type','figure','name',['Axial Subject Data: ' subj.breathhold]));
 close(findobj('type','figure','name',['Timeseries vs. Customized Boxcar: ' subj.breathhold]));
 close(findobj('type','figure','name',['Create customized boxcar for: ' subj.breathhold]));
 close(findobj('type','figure','name',['Timeseries: ' subj.breathhold]));
+close(findobj('type','figure','name',['Entire Brain Average Timeseries: ' subj.breathhold]));
+
+set(main_GUI.start,'Enable','off'); % disable the analyze subject button 
 
 GUI = 1; % indicates to slider_position.m which GUI the slider belongs to - processing GUI (1) OR viewing GUI (2)
 
@@ -44,9 +51,6 @@ anat.zrange = (1:anat.z);
 %  Adjusting the contrast of the anatomical scans (shrink the window of the range of values)
 global sigmin;
 global sigmax; 
-%  Default values
-sigmin = 10;
-sigmax = 500;
 
 %  Create the entire interface panel
 axial.f = figure('Name', ['Axial Subject Data: ' subj.breathhold],...
@@ -81,19 +85,18 @@ axial.save_sig_vals = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Update Values',...
                                 'Value',0,'Position',[5,10,100,30],...
-                                'Callback',@adjust_sig_vals); 
+                                'Callback',{@adjust_sig_vals,directories}); 
                         
 guidata(axial.f,axial);
 
 %  Preparing slices to be displayed
 %  AXIAL slice
-anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3]))- sigmin) / sigmax ;
+anat.slice_ax = (double(repmat(imresize(squeeze(anat.img(:,:,anat.slice_z)),[anat.x anat.y]), [1 1 3])) - sigmin) / sigmax ;
 anat.slice_ax = imresize(anat.slice_ax,[anat.x anat.y/anat.hdr.dime.pixdim(1)]);
 anat.slice_ax = rot90(anat.slice_ax(anat.xrange,anat.yrange,:));
 anat.slice_ax = flip(anat.slice_ax,2);      
 
-%  Check if the standard stimfiles are the correct length, adjust them if
-%  not, then copy them to metadata/stim
+%  functional time data 
 funct.time = funct.hdr.dime.dim(5);
 
 if main_GUI.boxcar(2).Value == 1
@@ -105,7 +108,7 @@ end
 axial.userprompt = uicontrol('Style','text',...
                     'units','normalized',...
                     'Position',[0.05,0.9,0.9,0.1],...
-                    'String',['Please specify an ROI to extract the ' subj.breathhold ' timeseries and ' userprompt_string]);
+                    'String',['Specify an ROI to extract the ' subj.breathhold ' timeseries and ' userprompt_string ' or refer to the entire brain timeseries.']);
 
 %  Text that displays the slider/slice position
 axial.position_slider = uicontrol('Style','text',...
@@ -118,7 +121,7 @@ axial.drawROI = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Draw ROI',...
                                 'Value',0,'Position',[250,5,100,40],...
-                                'Callback',{@drawROI_copy,anat,directories,subj,main_GUI,subj,funct}); 
+                                'Callback',{@drawROI_copy,anat,directories,subj,main_GUI,funct}); 
 
 %  Slider to control axial slice position                       
 axial.slider = uicontrol('style', 'slider',...
@@ -135,5 +138,18 @@ axial.text_slider = uicontrol('Style', 'text',...
                                 'String', 'Axial Slice Position');                        
 
 axes,      
-imshow(anat.slice_ax);
+imshow(anat.slice_ax);  
+
+if main_GUI.boxcar(2).Value == 1
+    shift_custom_capability = 1;
+else
+    shift_custom_capability = 2;
+end   
+
+%  DISPLAY BRAIN AVERAGE TIMESERIES WINDOW standard boxcar plotted against
+pos = [958,800,900,670]; % initialize the position of the window to show the average brain timeseries plot
+stim = [directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D']; % initialize the stimfile selection as the standard boxcar
+boxcar_name = 'Standard Boxcar';
+average_brain_timeseries(subj,directories,funct,pos,stim,boxcar_name,shift_custom_capability,main_GUI); % call the function to plot the average brain timeseries against the standard boxcar
+   
 end

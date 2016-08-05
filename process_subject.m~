@@ -293,6 +293,8 @@ pause(3);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  AFTER THE SUBJECT HAS BEEN PROCESSED
 
+if strcmp(subj.breathhold
+
 %  Current study dropdown description to select a specific study to analyze
 sp.userprompt = uicontrol('Style','text',...
                                 'units','normalized',...
@@ -336,18 +338,6 @@ elseif strcmp(subj.breathhold,'SENSR') == 1 || strcmp(subj.breathhold,'SENSL') =
     subj.proc_rec_sel = 'SENS';
 else
     subj.proc_rec_sel = subj.breathhold;
-end
-
-if strcmp(subj.proc_rec_sel,'MOT') == 1 || strcmp(subj.proc_rec_sel,'SENS') == 1
-    for processed = 1:2
-        if processed == 1
-            tag = 'processed';
-        else
-            tage = 'raw';
-        end
-    copyfile(['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii'],['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii'],'f');
-    copyfile(['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '_mask.nii'],['data/' tag '/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_mask.nii'],'f');
-    end
 end
 
 fileID = fopen([directories.textfilesdir '/gen_selection.txt'],'w+'); % Open the gen_selection textfile in write mode
