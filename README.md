@@ -50,6 +50,7 @@ Run SickKids_CVR.m
 * refresh_customized.m - refresh the customize boxcar window where the user can input values 
 * save_shifted_to_file.m - save the shifted boxcar to a .1D file
 * shift_boxcar.m - shift the standard boxcar using a slider on the plot figure
+* show_axial_figure.m - show axial slices to the user so that they can adjust image contrast and select an ROI to extract timeseries
 * standard_selected.m - when standard boxcar is selected, call the function to close all additional windows 
 * viewboxcar.m - view the customized boxcar after it has been created
 
@@ -59,3 +60,32 @@ Run SickKids_CVR.m
 #### Change the interface
 * first_gui_again.m - refresh the Process/Analyze Subject interface
 * go_to_main.m - go back to SickKids_CVR.m to select a different step 
+
+### Step 2: View Data
+### look_at_CVR_data.m 
+
+#### CVR Map 
+* CVRmap.m
+* CVRmap_for_montage.m
+* drawROI.m
+* make_montage.m
+* negative_map.m
+* plotfiles.m
+* positive_map.m
+* predetermined_ROI.m
+* pushstate.m
+* t_slider.m
+
+#### Slider Positions
+* slider_position.m
+* sliderpos_ax.m
+* sliderpos_cor.m
+* sliderpos_sag.m
+
+#### Change the interface
+* first_gui_again.m
+* run_again.m
+
+### Step 3: Clinical Report
+### 
+
