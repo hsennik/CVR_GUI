@@ -66,27 +66,27 @@ Run SickKids_CVR.m
 ### look_at_CVR_data.m 
 
 #### CVR Map 
-* CVRmap.m
-* CVRmap_for_montage.m
-* drawROI.m
-* make_montage.m
-* negative_map.m
-* plotfiles.m
-* positive_map.m
-* predetermined_ROI.m
-* pushstate.m
-* t_slider.m
+* CVRmap.m - overlay CVR map on the anatomical slices 
+* CVRmap_for_montage.m - create a montage of the CVR map
+* drawROI.m - draw an ROI to extract the timeseries 
+* make_montage.m - save the montage 
+* negative_map.m - only overlay a map of areas with negative reactivity 
+* plotfiles.m - plot the timeseries from a region against the selected stimulus
+* positive_map.m - only overlay a map of areas with positive reactivity
+* predetermined_ROI.m - create a mask to view a specific brain region and the corresponding map
+* pushstate.m - records whether the overlay CVR map button has been pressed 
+* t_slider.m - threshold the CVR map 
 
 #### Slider Positions
-* slider_position.m
+* slider_position.m - record the slider position data to overlay the correct CVR map slice on to the anatomical slice 
 * sliderpos_ax.m
 * sliderpos_cor.m
 * sliderpos_sag.m
 
 #### Change the interface
-* first_gui_again.m
-* run_again.m
+* go_to_main.m - go back to SickKids_CVR.m to select a different step 
+* run_again.m - refresh the View Data interface
 
 ### Step 3: Clinical Report
-### 
+### generate_report.m
 
