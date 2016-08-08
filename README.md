@@ -1,21 +1,28 @@
-# CVR_GUI
-Matlab files for CVR GUI 
+# Cerebrovascular Reactivity (CVR) - A Graphical User Interface for processing, analyzing, and viewing a subject's CVR data, and generating a clinical diagnostic report.
 
-Wayne please look at these files 
+## Getting Started
 
-**look_at_CVR_data.m**
+Run SickKids_CVR.m
 
-This is the main user interface where clinician can LOOK at data 
+### Prerequisities
 
-**CVRmap.m**
+An account on SickKids server Ontasian (Tatooine)
+VNC Viewer
+Basic Linux knowledge
+Ability to run MATLAB 
 
-This file creates the CVR map to overlay on to axial anatomical image (please refer to this for the **colour map** issue) 
+## Built With
 
-**drawROI.m**
+* MATLAB - the entire GUI
+* Python - the process and analyze pipelines
 
-This function takes the drawn region, converts it in to a mask, and ideally pulls the **timeseries** from the functional data. Having issues right now because I can't convert logical (the mask) to nii.
+## Authors
 
-**process_subject.m**
+* **Hannah Sennik** - *Initial work* - (https://github.com/hsennik)
 
-This is the first GUI that the user will see where they can select the subject to completely process and analyze 
+## Acknowledgments
 
+* Wayne Lee, Ben Morgan - process_fmri.py, analyze_fmri.py
+* Stimulate (One of the earliest fMRI software package from CMRR at University of Minnesota)
+* AFNI - a set of C programs for processing, analyzing, and displaying functional MRI (FMRI) data
+* FSL - comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data
