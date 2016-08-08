@@ -23,6 +23,7 @@ Run SickKids_CVR.m
 ### Acknowledgments
 
 * Wayne Lee, Ben Morgan - process_fmri.py, analyze_fmri.py
+* Priyanka Shah, Dr. William Logan, Dr. Nomazulu Dlamini
 * Stimulate (One of the earliest fMRI software package from CMRR at University of Minnesota)
 * AFNI - a set of C programs for processing, analyzing, and displaying functional MRI (FMRI) data
 * FSL - comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data
