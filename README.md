@@ -11,16 +11,16 @@ VNC Viewer
 Basic Linux knowledge
 Ability to run MATLAB 
 
-## Built With
+### Built With
 
 * MATLAB - the entire GUI
 * Python - the process and analyze pipelines
 
-## Authors
+### Authors
 
 * **Hannah Sennik** - *Initial work* - (https://github.com/hsennik)
 
-## Acknowledgments
+### Acknowledgments
 
 * Wayne Lee, Ben Morgan - process_fmri.py, analyze_fmri.py
 * Stimulate (One of the earliest fMRI software package from CMRR at University of Minnesota)
