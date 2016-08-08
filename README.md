@@ -30,9 +30,11 @@ Run SickKids_CVR.m
 ## List of Functions
 ### Step 1: Process/Analyze Subject
 ### process_subject.m 
+
 #### Processing
 * processing_pipeline.m - run the subject through the processing pipeline
 * tissue_segmentation.m - run fsl fast to segment white matter, gray matter, and csf
+
 #### Boxcar
 * adjust_boxcar.m - specifying that boxcar adjustments must be made
 * adjust_sigvals.m - adjusting the contrast of the anatomical data 
@@ -49,9 +51,11 @@ Run SickKids_CVR.m
 * save_shifted_to_file.m - save the shifted boxcar to a .1D file
 * shift_boxcar.m - shift the standard boxcar using a slider on the plot figure
 * standard_selected.m - when standard boxcar is selected, call the function to close all additional windows 
-* viewboxcar.m - view the customized boxcar after it has been created 
+* viewboxcar.m - view the customized boxcar after it has been created
+
 #### Analysis
 * analyze_subject.m - run the subject through the analysis pipeline using the selected boxcar/stimulus file 
+
 #### Change the interface
 * first_gui_again.m - refresh the Process/Analyze Subject interface
 * go_to_main.m - go back to SickKids_CVR.m to select a different step 
