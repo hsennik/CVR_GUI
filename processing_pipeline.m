@@ -48,7 +48,7 @@ status = system(command);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  CREATING THE TISSUE SEGMENTATION MASKS USING FSL FAST - THIS STEP IS
 %  REALLY SLOW - give the user the option to generate these? 
-% tissue_segmentation(subj);
+tissue_segmentation(subj);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  MAPPING TO STANDARD SPACE 
