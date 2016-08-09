@@ -61,7 +61,7 @@ subj.date = '160314';
 %  CREATING THE INTERFACE
 
 %  Create the MAIN PANEL
-mp.f = figure('Name', 'CVR Menu',...
+mp.f = figure('Name', 'View Data',...
                     'Visible','on',...
                     'Position',[25,750,300,700],...
                     'numbertitle','off');
@@ -146,7 +146,7 @@ elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.bre
             C{2} = 'Cerebellum';
 end
  
-%  Create menu for stimfile selection (options are boxcar or pf)
+%  Create menu for stimfile selection
 mp.menu(1) = uicontrol('Style','popupmenu',...
                         'Visible','on',...
                         'Enable','off',...
@@ -160,7 +160,7 @@ mp.menu(2) = uicontrol('Style','popupmenu',...
                     'String',{'','pre-processed','raw'},...
                     'Position',[50,395,200,60]);
 
-mp.STR3 = {'','coefficient','t-statistic','R2'}; % String for glm bucket                    
+mp.STR3 = {'','coefficient','t-statistic','R-squared'}; % String for glm bucket                    
 %  Create menu for glm bucket selection (options are t-statistic,coefficient,R2)
 mp.menu(3) = uicontrol('Style','popupmenu',...
                         'Visible','on',...
@@ -183,13 +183,13 @@ mp.quit = uicontrol('Style','pushbutton',...
                     'Value',0,'Position',[75,20,150,60],...
                     'callback',@go_to_main);
                 
-%  Descriptive text for t_stat slider 
+%  Descriptive text for threshold slider 
 mp.t_text = uicontrol('Style','text',...
                     'units','normalized',...
                     'String','Threshold value: ',...
                     'position',[0.05 0.20 0.5 0.05]);  
 
-%  Text that displays the t_stat slider value
+%  Text that displays the threshold slider value
 mp.t_number = uicontrol('Style','text',...
                         'units','normalized',...
                         'String',0,...
@@ -216,7 +216,7 @@ fname_anat = s;
 anat = load_nii([directories.subject '/' fname_anat]); % Load the subject's 3D skull stripped anatomical 
 [anat.x,anat.y,anat.z] = size(anat.img);
 
-%  Slider bar to adjust the t_stat for CVR map
+%  Slider bar to adjust the threshold for CVR map
 mp.t = uicontrol('Style','slider',...
                 'Min',0,'Max',1,...
                 'units','normalized',...
@@ -225,6 +225,7 @@ mp.t = uicontrol('Style','slider',...
                 'position',[0.70 0.21 0.25 0.2],...
                 'callback',{@t_slider,mp,anat}); 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
 %  CONSTRUCTING ANATOMICAL SLICES
 
 %  Initial slice position - values can be changed 
@@ -272,6 +273,7 @@ anat.slice_sag = imresize(anat.slice_sag,[anat.y anat.z/anat.hdr.dime.pixdim(3)]
 anat.slice_sag = rot90(anat.slice_sag(anat.yrange,anat.zrange,:));
 anat.slice_sag = flip(anat.slice_sag,2);
                  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  LOAD THE FUNCTIONAL DATA
 
 set(mp.menu(1),'Enable','on'); % enable stimfile selection dropdown
@@ -312,7 +314,7 @@ if strcmp(mp.menu(3).String(mp.menu(3).Value),'t-statistic') == 1
     funct_name = 'tstat';
 elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'coefficient') == 1
     funct_name = 'coeff';
-elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'R2') == 1
+elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'R-squared') == 1
     funct_name = 'R2';
 end
 
@@ -327,6 +329,7 @@ elseif(mp.menu(2).Value == 3) % if the user chooses to display the raw data, wri
     fprintf(fileID,format,0);
     fclose(fileID);
     display('no processing');
+    flirtext = [flirtext '_raw'];
 end
 
 type = flirtext;
@@ -336,17 +339,19 @@ functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathho
 %  Load the functional file that was transformed to anatomical space 
 funct.mapped_anat = load_nii([directories.subject '/' functional_data]);
 
+%  Find the max and min values from the statistical bucket (use these for
+%  the slider)
 max_funct = max(funct.mapped_anat.img(:));
 min_funct = min(funct.mapped_anat.img(:));
 
-thresh_near = max(abs(max_funct),abs(min_funct));
+thresh_near = max(abs(max_funct),abs(min_funct)); % set max threshold value to the absolute value of either the max or min bucket value 
 
 thresh_near = round(thresh_near,3);
 
 set(mp.t,'Max',thresh_near);
 set(mp.t,'SliderStep',[thresh_near/1000,thresh_near/100]);
 
-%  DISPLAY THE SLICES IN WINDOWS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  AXIAL WINDOW
 
 %  Create window to display axial slices
@@ -428,6 +433,7 @@ ax_window.image = imshow(anat.slice_ax);
 
 guidata(ax_window.f,ax_window);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  CORONAL WINDOW
 
 %  Create window to display coronal slices
@@ -462,6 +468,7 @@ cor_window.text_slider = uicontrol('Style', 'text',....
 %  Display the coronal slice                             
 imshow(anat.slice_cor);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  SAGITTAL WINDOW
 
 %  Create window to display sagittal slices
