@@ -561,7 +561,7 @@ if __name__ == '__main__' :
                 sys_cmd = 'gzip %s/%s%s' % (dir_analyzed_subj, fname_glm_err, pinfo.file_type)
                 check_and_run(sys_cmd, dir_analyzed_subj, fname_glm_err, pinfo.file_type + '.gz', debug)
 			
-fileName = 'REDCap_import_files/all/'+ subj + '_' + stimulus_suffix + '_analyzed_parameters.txt'				
+fileName = 'REDCap_import_files/all/'+ subj + '_' + breathhold_selection + '_' + stimulus_suffix + '_analyzed_parameters.txt'				
 with open(fileName,'w') as thefile:
 	thefile.write('dir_dcm_base,' + pinfo.dir_dcm_base + ',Base Directory\n')
 	thefile.write('dir_analyzed,' + pinfo.dir_analyzed + ',Analyzed Directory\n')
