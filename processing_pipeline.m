@@ -11,7 +11,7 @@ function processing_pipeline(source,callbackdata,subj,directories)
 % 
 
 %  Get data from 'Process and Analyze Subject' figure
-main_GUI = guidata(source);
+handles = guidata(source);
 
 %  Make REDCap directories where a summary of processing and analysis parameters used will be
 %  saved to a text file
@@ -25,15 +25,15 @@ fprintf(fileID,format,1); % Write 1 to file means do processing
 fclose(fileID);
 
 %  Tell the user to wait for the subject to be processed
-main_GUI.userprompt = uicontrol('Style','text',...
+handles.userprompt = uicontrol('Style','text',...
                     'units','normalized',...
-                    'Position',[0.10,0.4,0.8,0.08],...
+                    'Position',[0.10,0.41,0.8,0.05],...
                     'String','Please wait while the subject is being processed');
 
 pause(2);
 
 %  Run the processing pipeline with all steps
-command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR_' subj.name '.txt --clean'];
+command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR.txt --clean'];
 status = system(command);
 
 fileID = fopen([directories.subject '/' directories.textfilesdir '/processing.txt'],'w+');
@@ -42,13 +42,22 @@ fprintf(fileID,format,0); % Write zero to file means no processing/skip steps
 fclose(fileID);
 
 %  Run the processing pipeline and skip steps 
-command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR_' subj.name '.txt --clean'];
+command = ['python ' directories.matlabdir '/python/process_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/P_CVR.txt --clean'];
 status = system(command);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  CREATING THE TISSUE SEGMENTATION MASKS USING FSL FAST - THIS STEP IS
 %  REALLY SLOW - give the user the option to generate these? 
-tissue_segmentation(subj);
+
+fileID = fopen([directories.subject '/' directories.textfilesdir '/create_segmentation_masks.txt'],'w+');
+format = '%d\n';
+if handles.create_mask_selection.Value == 1
+    fprintf(fileID,format,1);
+    tissue_segmentation(subj);
+else
+    fprintf(fileID,format,0);
+end
+fclose(fileID);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  MAPPING TO STANDARD SPACE 
@@ -72,10 +81,7 @@ display('************** ALL DONE **************');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Tell the user to wait for the subject to be processed
-main_GUI.userprompt = uicontrol('Style','text',...
-                    'units','normalized',...
-                    'Position',[0.10,0.4,0.8,0.08],...
-                    'String','Subject processed');
+set(handles.userprompt,'String','Subject processed');
 
 set(source,'Enable','off');
 set(source,'String','Subject Processed');

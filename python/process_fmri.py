@@ -91,8 +91,8 @@ def load_subject_list(fname_subj_list):
         # create_corr_table(dir['gm_corr'], fmri_corr, dir['gm_corr'], subj + '_corr.txt', rois['gm'], debug)
         
 
-#  Just doing no temporal filtering for all for now
-add_suffix1 = 'none'
+#  MD for temporal filtering 
+temp_filt_setting = 'MD'
 
 with open('textfiles/processing.txt','r') as myfile2:
 	processing=myfile2.readline().rstrip()
@@ -172,15 +172,10 @@ if __name__ == '__main__' :
     print "****** PREPARING PIPELINE DIRECTORIES ******"
     print pinfo.dir_recon
     print pinfo.dir_processed
-    #print('Selection:' + add_suffix1)
-    # if data3 != '1':
-		# pinfo.dir_recon = pinfo.dir_recon + '_' + add_suffix1
     dir_recon_base = check_dir ( pinfo.dir_recon,debug)
     print pinfo.dir_recon
     if processing == '0': # Then don't do processing steps
 		pinfo.dir_processed = pinfo.dir_dcm_base + '/data/raw'
-    # if data3 != '1':
-		# pinfo.dir_processed = pinfo.dir_processed + '_' + add_suffix1
     dir_processed_base = check_dir(pinfo.dir_processed, debug)  # create base processed director
     dir_processed = check_dir ( '%s/%s' % (pinfo.dir_processed, pinfo.pipeline_id),debug)
     dir_final = check_dir ('%s/final' % (dir_processed,),debug)
@@ -486,15 +481,15 @@ if __name__ == '__main__' :
 							roi_list = ''
 
 						# Orthogonalize data using 3dDeconvolve
-						if add_suffix1 == 'mpe':
+						if temp_filt_setting == 'mpe':
 						#if pinfo.mpr_type == 'mpe':
 							num_motion = 6
 							fname_mpr = fname_mpe
-						elif add_suffix1 == 'MD':
+						elif temp_filt_setting == 'MD':
 						#elif pinfo.mpr_type == 'MD':
 							num_motion = 1
 							fname_mpr = fname_MD
-						elif add_suffix1 == 'none':
+						elif temp_filt_setting == 'none':
 							num_motion = 0
 							fname_mpr = fname_MD   # dummy variable call/is this the same as none?
 					 

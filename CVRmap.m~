@@ -30,19 +30,19 @@ global onlynegative;
 ROImask = 0;
 
 if strcmp(dimension,'axial') == 1 %  if the axial slider is moved
-    slice = floor(ax_slider_value);
+    slice = anat.slice_z;
     dim1 = anat.x;
     dim2 = anat.y;
     range1 = anat.xrange;
     range2 = anat.yrange;
 elseif strcmp(dimension,'coronal') == 1 %  if the coronal slider is moved
-    slice = floor(cor_slider_value);
+    slice = anat.slice_y;
     dim1 = anat.x;
     dim2 = anat.z;
     range1 = anat.xrange;
     range2 = anat.zrange; 
 elseif strcmp(dimension,'saggital') == 1 %  if the saggital slider is moved
-    slice = floor(sag_slider_value);
+    slice = anat.slice_x;
     dim1 = anat.y;
     dim2 = anat.z;
     range1 = anat.yrange;

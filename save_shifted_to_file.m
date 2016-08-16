@@ -67,4 +67,7 @@ elseif sign(shift_value) == 1 % if the boxcar was shifted to the right
 elseif sign(shift_value) == 0 % if the boxcar wasn't shifted, copy the standard boxcar directly to the shifted file 
     copyfile([directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '.1D'],[directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_shifted.1D']);
 end
+
+h = msgbox('Shifted boxcar saved');
+
 end

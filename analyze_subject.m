@@ -20,14 +20,15 @@ set(handles.boxcar(2),'Enable','off');
 set(handles.boxcar(3),'Enable','off');
 set(handles.pf,'Enable','off');
 set(handles.raw,'Enable','off');
-
-pause(2);
+set(handles.alternative_methods,'Enable','off');
 
 %  Tell the user to wait for the subject to be processed
 handles.analyze_prompt = uicontrol('Style','text',...
                     'units','normalized',...
-                    'Position',[0.05,0.09,0.9,0.035],...
+                    'Position',[0.05,0.08,0.9,0.035],...
                     'String','Please wait while the subject is being analyzed');
+                
+pause(2);                
 
 %  Open file that indicates which boxcar was selected
 fileID = fopen([directories.textfilesdir '/standard_shifted_customized.txt'],'w+');
@@ -54,7 +55,6 @@ if handles.pf.Value == 1 % if pf checkbox was selected on interface then run ana
     %  Make flirt directory that will be used for mapping functional data to
     %  anatomical space, and for generating pf stimfiles
     mkdir([directories.subject '/' directories.flirtdir '/pf']);
-    mkdir([directories.subject '/' directories.flirtdir '/pf_raw']);
 else % if pf checkbox was not selected on interface then do not analyze using pf 
     start = 2;
 end
@@ -68,6 +68,8 @@ end
 if handles.raw.Value == 1 % analyze using the raw data
     raw_too = 2;
     mkdir([directories.subject '/' directories.flirtdir '/' boxcar_destination '_raw']);
+    mkdir([directories.subject '/' directories.flirtdir '/pf_raw']);
+    mkdir([directories.subject '/' directories.flirtdir '/sawtooth_raw']);
 else % don't analyze using the raw data
     raw_too = 1;
 end
@@ -84,7 +86,13 @@ fclose(fileID);
 fileID = fopen([directories.textfilesdir '/otherstimsel.txt'],'w+');
 format = '%s';
 
-if strcmp(handles.alternative_methods.String, 'Respiratory Bellows') == 1 
+if strcmp(handles.alternative_methods.String(handles.alternative_methods.Value),'Standard Sawtooth') == 1
+    stimulus_number = 3;
+    thirdseldest = 'sawtooth';
+    fprintf(fileID,format,thirdseldest);
+    copyfile('/data/hannahsennik/MATLAB/CVR_GUI/python/sawtooth.1D',[directories.subject '/' directories.metadata '/stim/bhonset' subj.name '_sawtooth.1D'],'f');
+    mkdir([directories.subject '/' directories.flirtdir '/sawtooth']);
+elseif strcmp(handles.alternative_methods.String, 'Respiratory Bellows') == 1 
     stimulus_number = 3; %  a dropdown stimfile has been selected
     thirdseldest = 'bellows';
     fprintf(fileID,format,thirdseldest);
@@ -101,6 +109,10 @@ fclose(fileID);
 for stimulus=start:stimulus_number %  First for loop goes through stimfile selections
     for processed = 1:raw_too % Second for loop analyzes processed and then unprocessed data
       
+        if stimulus == 3
+            boxcar_destination = 'sawtooth';
+        end
+        
         display(stimulus);
         display(processed);
         
@@ -188,7 +200,7 @@ for stimulus=start:stimulus_number %  First for loop goes through stimfile selec
         end
         
         %  Run the analyze pipeline
-        command = ['python ' directories.matlabdir '/python/analyze_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/A_CVR_' subj.name '.txt --clean'];
+        command = ['python ' directories.matlabdir '/python/analyze_fmri.py ' directories.metadata '/S_CVR_' subj.name '.txt ' directories.metadata '/A_CVR.txt --clean'];
         status = system(command);
     
         %  After analysis is run, map the functional data to anatomical space
@@ -221,7 +233,7 @@ for stimulus=start:stimulus_number %  First for loop goes through stimfile selec
             %  transformation matrix generated in recon step
             str8 = ['flirt -in ' directories.flirtdir '/'];
             str9 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_' funct_name '.nii -ref data/recon'];
-            str10 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_' funct_name '_anat_space.nii -init data/recon/' subj.name '/' subj.name '_' subj.breathhold '_anat.xfm -applyxfm'];
+            str10 = ['/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_' funct_name '_anat_space.nii -init data/recon/' subj.name '/' subj.name '_' subj.proc_rec_sel '_anat.xfm -applyxfm'];
 
             bucket2anat = [str8 str2 str9 str5 str2 str10];
             command = bucket2anat;
@@ -232,24 +244,26 @@ for stimulus=start:stimulus_number %  First for loop goes through stimfile selec
 end
 
 % Map white,gray matter,csf to functional space to do 3dmaskave
-for i = 0:3
-    if i == 0
-        mask_name = 'csf';
-    elseif i == 1
-        mask_name = 'gray';
-    elseif i == 2
-        mask_name = 'white';
-    elseif i == 3
-        mask_name = 'no_csf';
-        command = ['flirt -in data/recon/' subj.name '/' subj.name '_nocsf.nii -ref data/processed/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.flirtdir '/' mask_name '_funct_mask.nii -init data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm -applyxfm'];
+if handles.create_mask_selection.Value == 1
+    for i = 0:3
+        if i == 0
+            mask_name = 'csf';
+        elseif i == 1
+            mask_name = 'gray';
+        elseif i == 2
+            mask_name = 'white';
+        elseif i == 3
+            mask_name = 'no_csf';
+            command = ['flirt -in data/recon/' subj.name '/' subj.name '_nocsf.nii -ref data/processed/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.flirtdir '/' mask_name '_funct_mask.nii -init data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm -applyxfm'];
+            status = system(command);
+        end
+        if i ~= 3
+            command = ['flirt -in data/recon/' subj.name '/' subj.name '_anat_brain_seg_' num2str(i) '.nii -ref data/processed/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.flirtdir '/' mask_name '_funct_mask.nii -init data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm -applyxfm'];
+            status = system(command);
+        end
+        command = ['3dmaskave -q -mask ' directories.flirtdir '/' mask_name '_funct_mask.nii data/processed/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii > ' directories.timeseries '/' mask_name '_' subj.breathhold '.1D'];
         status = system(command);
     end
-    if i ~= 3
-        command = ['flirt -in data/recon/' subj.name '/' subj.name '_anat_brain_seg_' num2str(i) '.nii -ref data/processed/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii -out ' directories.flirtdir '/' mask_name '_funct_mask.nii -init data/recon/' subj.name '/' subj.name '_anat_' subj.proc_rec_sel '.xfm -applyxfm'];
-        status = system(command);
-    end
-    command = ['3dmaskave -q -mask ' directories.flirtdir '/' mask_name '_funct_mask.nii data/processed/CVR_' subj.date '/final/' subj.name '_' subj.proc_rec_sel '_CVR_' subj.date '.nii > ' directories.timeseries '/' mask_name '_' subj.breathhold '.1D'];
-    status = system(command);
 end
 
 set(handles.start,'Enable','off');
@@ -259,5 +273,7 @@ set(handles.look,'Enable','on'); % Enable the push button for the user to go bac
 set(handles.analyze_prompt,'String','                  ');
 
 pause(1);
+
+h = msgbox('Subject analyzed. Subject data is ready for viewing.');
 
 end
