@@ -61,7 +61,7 @@ subj.date = '160314';
 %  CREATING THE INTERFACE
 
 %  Create the MAIN PANEL
-mp.f = figure('Name', 'CVR Menu',...
+mp.f = figure('Name', 'View Data',...
                     'Visible','on',...
                     'Position',[25,750,300,700],...
                     'numbertitle','off');
@@ -113,40 +113,82 @@ if exist(['data/analyzed_standard_boxcar/CVR_' subj.date '/final/' subj.name '_'
     C{2} = 'Standard Boxcar';
     if exist(['data/analyzed_shifted_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
         C{3} = 'Shifted Boxcar';
-        if exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2     
+        if exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
             C{4} = 'Customized Boxcar';
             if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
                 C{5} = 'Cerebellum';
+                if exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+                    C{6} = 'Sawtooth';
+                end
+            elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+                C{5} = 'Sawtooth';
             end
+        elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+            C{4} = 'Cerebellum';
+            if exist (['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+                C{5} = 'Sawtooth';
+            end
+        elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+            C{4} = 'Sawtooth';
         end
     elseif exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
         C{3} = 'Customized Boxcar';
-        if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+        if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
             C{4} = 'Cerebellum';
+            if exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+                C{5} = 'Sawtooth';
+            end
+        elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+            C{4} = 'Sawtooth';
         end
-    elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
-            C{3} = 'Cerebellum';
+    elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+        C{3} = 'Cerebellum';
+        if exist (['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+            C{4} = 'Sawtooth';
+        end
+    elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+        C{3} = 'Sawtooth';
     end
 elseif exist(['data/analyzed_shifted_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
     C{2} = 'Shifted Boxcar';
-    if exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2     
+    if exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
         C{3} = 'Customized Boxcar';
-        if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
+        if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
             C{4} = 'Cerebellum';
+            if exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+                C{5} = 'Sawtooth';
+            end
+        elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+            C{4} = 'Sawtooth';
         end
-    elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
-            C{3} = 'Cerebellum';
+    elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+        C{3} = 'Cerebellum';
+        if exist (['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+            C{4} = 'Sawtooth';
+        end
+    elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+        C{3} = 'Sawtooth';
     end
-elseif exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+elseif exist(['data/analyzed_customized_boxcar/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
     C{2} = 'Customized Boxcar';
-    if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
-            C{3} = 'Cerebellum';
+    if exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+        C{3} = 'Cerebellum';
+        if exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+            C{4} = 'Sawtooth';
+        end
+    elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+        C{3} = 'Sawtooth';
     end
-elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
-            C{2} = 'Cerebellum';
-end
+elseif exist(['data/analyzed_pf/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2  
+    C{2} = 'Cerebellum';
+    if exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+        C{3} = 'Sawtooth';
+    end
+elseif exist(['data/analyzed_sawtooth/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2
+    C{2} = 'Sawtooth';
+end       
  
-%  Create menu for stimfile selection (options are boxcar or pf)
+%  Create menu for stimfile selection
 mp.menu(1) = uicontrol('Style','popupmenu',...
                         'Visible','on',...
                         'Enable','off',...
@@ -160,7 +202,7 @@ mp.menu(2) = uicontrol('Style','popupmenu',...
                     'String',{'','pre-processed','raw'},...
                     'Position',[50,395,200,60]);
 
-mp.STR3 = {'','coefficient','t-statistic','R2'}; % String for glm bucket                    
+mp.STR3 = {'','coefficient','t-statistic','R-squared'}; % String for glm bucket                    
 %  Create menu for glm bucket selection (options are t-statistic,coefficient,R2)
 mp.menu(3) = uicontrol('Style','popupmenu',...
                         'Visible','on',...
@@ -179,17 +221,17 @@ mp.CVRb = uicontrol('Style','togglebutton',...
 %  Button to go back to SickKids_CVR.m
 mp.quit = uicontrol('Style','pushbutton',...
                     'Visible','on',...
-                    'String','DONE',...
+                    'String','BACK TO MAIN',...
                     'Value',0,'Position',[75,20,150,60],...
                     'callback',@go_to_main);
                 
-%  Descriptive text for t_stat slider 
+%  Descriptive text for threshold slider 
 mp.t_text = uicontrol('Style','text',...
                     'units','normalized',...
                     'String','Threshold value: ',...
                     'position',[0.05 0.20 0.5 0.05]);  
 
-%  Text that displays the t_stat slider value
+%  Text that displays the threshold slider value
 mp.t_number = uicontrol('Style','text',...
                         'units','normalized',...
                         'String',0,...
@@ -216,7 +258,7 @@ fname_anat = s;
 anat = load_nii([directories.subject '/' fname_anat]); % Load the subject's 3D skull stripped anatomical 
 [anat.x,anat.y,anat.z] = size(anat.img);
 
-%  Slider bar to adjust the t_stat for CVR map
+%  Slider bar to adjust the threshold for CVR map
 mp.t = uicontrol('Style','slider',...
                 'Min',0,'Max',1,...
                 'units','normalized',...
@@ -225,12 +267,13 @@ mp.t = uicontrol('Style','slider',...
                 'position',[0.70 0.21 0.25 0.2],...
                 'callback',{@t_slider,mp,anat}); 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
 %  CONSTRUCTING ANATOMICAL SLICES
 
 %  Initial slice position - values can be changed 
-anat.slice_x = 120;
+anat.slice_x = 104;
 anat.slice_y = 104; 
-anat.slice_z = 69; 
+anat.slice_z = 104; 
 
 global ax_slider_value;
 ax_slider_value = anat.slice_z;
@@ -272,6 +315,7 @@ anat.slice_sag = imresize(anat.slice_sag,[anat.y anat.z/anat.hdr.dime.pixdim(3)]
 anat.slice_sag = rot90(anat.slice_sag(anat.yrange,anat.zrange,:));
 anat.slice_sag = flip(anat.slice_sag,2);
                  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  LOAD THE FUNCTIONAL DATA
 
 set(mp.menu(1),'Enable','on'); % enable stimfile selection dropdown
@@ -288,14 +332,16 @@ elseif strcmp(mp.menu(1).String(mp.menu(1).Value),'Customized Boxcar') == 1
     stim = [directories.metadata '/stim/bhonset' subj.name '_' subj.breathhold '_customized.1D'];
 elseif strcmp(mp.menu(1).String(mp.menu(1).Value),'Cerebellum') == 1    
     flirtext = 'pf';
-    stim = [directories.metadata '/stim/pf_stim_processed.1D'];
+    stim = [directories.metadata '/stim/pf_stim_' subj.breathhold '_processed.1D'];
+elseif strcmp(mp.menu(1).String(mp.menu(1).Value),'Sawtooth') == 1
+    flirtext = 'sawtooth';
+    stim = [directories.metadata '/stim/bhonset' subj.name '_sawtooth.1D'];
 end
 
 montage_info = flirtext;
 
 if exist(['data/analyzed_' flirtext '_raw/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck.nii'],'file') == 2 
     set(mp.menu(2),'String',{'','pre-processed','raw'}); % String for pre-processing popup
-    flirtext = [flirtext '_raw'];
 else 
     set(mp.menu(2),'String',{'','pre-processed'});
 end
@@ -312,7 +358,7 @@ if strcmp(mp.menu(3).String(mp.menu(3).Value),'t-statistic') == 1
     funct_name = 'tstat';
 elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'coefficient') == 1
     funct_name = 'coeff';
-elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'R2') == 1
+elseif strcmp(mp.menu(3).String(mp.menu(3).Value),'R-squared') == 1
     funct_name = 'R2';
 end
 
@@ -323,30 +369,32 @@ if(mp.menu(2).Value == 2) % if the user chooses to display the processed data, w
     fprintf(fileID,format,1); 
     fclose(fileID);
     display('processing');
+    type = flirtext;
 elseif(mp.menu(2).Value == 3) % if the user chooses to display the raw data, write 0 to the file 
     fprintf(fileID,format,0);
     fclose(fileID);
     display('no processing');
+    type = [flirtext '_raw'];
 end
-
-type = flirtext;
 
 functional_data = [directories.flirtdir '/' type '/' subj.name '_' subj.breathhold '_CVR_' subj.date '_glm_buck_' funct_name '_anat_space.nii'];
 
 %  Load the functional file that was transformed to anatomical space 
 funct.mapped_anat = load_nii([directories.subject '/' functional_data]);
 
+%  Find the max and min values from the statistical bucket (use these for
+%  the slider)
 max_funct = max(funct.mapped_anat.img(:));
 min_funct = min(funct.mapped_anat.img(:));
 
-thresh_near = max(abs(max_funct),abs(min_funct));
+thresh_near = max(abs(max_funct),abs(min_funct)); % set max threshold value to the absolute value of either the max or min bucket value 
 
 thresh_near = round(thresh_near,3);
 
 set(mp.t,'Max',thresh_near);
 set(mp.t,'SliderStep',[thresh_near/1000,thresh_near/100]);
 
-%  DISPLAY THE SLICES IN WINDOWS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  AXIAL WINDOW
 
 %  Create window to display axial slices
@@ -355,14 +403,14 @@ ax_window.f = figure('Name', 'Axial',...
                     'Position',[327,750,800,850],...
                     'numbertitle','off');
                 
-set(ax_window.f, 'MenuBar', 'none'); % remove the menu bar 
-set(ax_window.f, 'ToolBar', 'none'); % remove the tool bar                
+% set(ax_window.f, 'MenuBar', 'none'); % remove the menu bar 
+% set(ax_window.f, 'ToolBar', 'none'); % remove the tool bar                
     
 %  Text that displays the slider/slice position
 ax_window.position_slider = uicontrol('Style','text',...
                                     'units','normalized',...
                                     'String',anat.slice_z,...
-                                    'position',[0.03 0.22 0.1 0.15]);   
+                                    'position',[0.045 0.38 0.07 0.03]);   
                                 
 %  Button to draw ROI and graph the timeseries 
 ax_window.drawROI = uicontrol('Style','pushbutton',...
@@ -380,9 +428,18 @@ ax_window.regional_mask_text = uicontrol('Style','text',...
 %  Create menu for selecting pre-determined ROI to pull the timeseries 
 ax_window.predetermined_ROI = uicontrol('Style','popupmenu',...
                                 'Visible','on',...
-                                'String',{'Remove Ventricles and Venosinuses','Only White Matter','Only Gray Matter','Only Cerebellum','None'},...
+                                'String',{'Remove Ventricles and Venosinuses','Only White Matter','Only Gray Matter','None'},...
                                 'Position',[500,25,235,50],...
                                 'callback',{@predetermined_ROI,anat,funct,directories,mp,subj,stim});
+
+fileID = fopen([directories.subject '/' directories.textfilesdir '/create_segmentation_masks.txt'],'r');
+format = '%d\n';                            
+generate_maps = fgetl(fileID);
+fclose(fileID);
+if strcmp(generate_maps,'0') == 1
+    set(ax_window.predetermined_ROI,'String',{'None',''});
+    set(ax_window.predetermined_ROI,'Enable','off');
+end
 
 global onlypositive;
 global onlynegative;
@@ -412,7 +469,7 @@ ax_window.slider = uicontrol('style', 'slider',...
 %  Descriptive text of slider/slice position    
 ax_window.text_slider = uicontrol('Style', 'text',...
                                 'units', 'normalized',...
-                                'position', [0.03 0.73 0.1 0.15],...
+                                'position', [0.03 0.7 0.1 0.05],...
                                 'String', 'Axial Slice Position');
     
 %  Button to generate and show montage of CVR maps (5 by 5 as jpeg)
@@ -421,13 +478,14 @@ ax_window.montage_b = uicontrol('Style','pushbutton',...
                                 'Visible','on',...
                                 'String','Generate Montage',...
                                 'Value',0,'Position',[100,30,150,75],...
-                                'callback',{@make_montage,anat,funct,mp,type,subj,directories,montage_info});       
+                                'callback',{@make_montage,anat,funct,mp,type,subj,directories,montage_info,stim});       
                             
 % Display the axial slice 
 ax_window.image = imshow(anat.slice_ax);
 
 guidata(ax_window.f,ax_window);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  CORONAL WINDOW
 
 %  Create window to display coronal slices
@@ -451,7 +509,7 @@ cor_window.slider = uicontrol('style', 'slider',...
                             'units', 'normalized',...
                             'SliderStep',[1/anat.y,10/anat.y],...
                             'position',[0.04 0.45 0.08 0.25],...
-                            'callback',{@sliderpos_cor,anat,mp,funct,cor_window,directories,subj,GUI});
+                            'callback',{@sliderpos_cor,anat,mp,funct,cor_window,directories,subj,GUI,ax_window});
     
 %  Descriptive text of slider/slice position 
 cor_window.text_slider = uicontrol('Style', 'text',....
@@ -462,6 +520,7 @@ cor_window.text_slider = uicontrol('Style', 'text',....
 %  Display the coronal slice                             
 imshow(anat.slice_cor);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  SAGITTAL WINDOW
 
 %  Create window to display sagittal slices
@@ -485,7 +544,7 @@ sag_window.slider = uicontrol('style', 'slider',...
                             'units', 'normalized',...
                             'SliderStep',[1/anat.x,10/anat.x],...
                             'position',[0.04 0.45 0.08 0.25],...
-                            'callback',{@sliderpos_sag,anat,mp,funct,sag_window,directories,subj,GUI});
+                            'callback',{@sliderpos_sag,anat,mp,funct,sag_window,directories,subj,GUI,ax_window});
 
 %  Descriptive text of slider/slice position    
 sag_window.text_slider = uicontrol('Style', 'text',...
@@ -495,6 +554,24 @@ sag_window.text_slider = uicontrol('Style', 'text',...
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 %  Display the sagittal slice 
 imshow(anat.slice_sag);
+
+if strcmp(generate_maps,'1') == 1
+    default_timeseries = [directories.timeseries '/no_csf_' subj.breathhold '.1D'];
+    timeseries_name = 'Entire Brain - ventricles removed';
+else
+    default_timeseries = [directories.timeseries '/brain_average.1D'];
+    timeseries_name = 'Entire Brain';
+end
+
+shift_custom_capability = 5;
+boxcar_name = mp.menu(1).String(mp.menu(1).Value);
+boxcar_name = boxcar_name{1};
+figname = 'Entire Brain Timeseries';
+pos = [1130,400,600,410];
+funct_space = (['data/processed/CVR_' subj.date '/final/' subj.name '_' subj.breathhold '_CVR_' subj.date '.nii']);
+funct_space = load_nii([directories.subject '/' funct_space]);
+
+plotfiles(directories,subj,default_timeseries,stim,pos,figname,shift_custom_capability,timeseries_name,boxcar_name,funct_space,mp);
 
 set(mp.CVRb,'enable','on'); % enable the button for user to overlay CVR maps on to anatomical slices 
 set(mp.t,'enable','on'); % enable t_stat slider 

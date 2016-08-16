@@ -123,7 +123,15 @@ elif boxcar_sel == '3':
 	if stimulus == '2':
 		stimulus_suffix = 'customized_boxcar'
 print tackon
-print stimulus_suffix
+
+if stimulus == '3':
+	with open('textfiles/otherstimsel.txt','r') as myfile4:
+		otherstimsel = myfile4.readline().rstrip()
+		if otherstimsel == 'sawtooth':
+			stimulus_suffix = 'sawtooth'
+	myfile4.close
+	
+print stimulus_suffix	
 
 # Method of determining which breathhold if selected, since analysis only runs one study at a time (fmri_name)
 with open('textfiles/breathhold_selection.txt') as myfile4:
@@ -182,12 +190,7 @@ if __name__ == '__main__' :
     
     # Create processed directory link
     print "****** PREPARING PIPELINE DIRECTORIES ******"
-    # print('Selection:' + add_suffix1 + '_' + stimulus)
-    # if data3 != '1':
-		# pinfo.dir_recon = pinfo.dir_recon + '_' + add_suffix1
     dir_recon_base = check_dir ( pinfo.dir_recon,debug)
-    # if data3 != '1':
-		# pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + add_suffix1 + '_' + stimulus
     if processing == '0':
 		pinfo.dir_analyzed = pinfo.dir_analyzed + '_' + stimulus_suffix + '_raw'
     else:
@@ -195,8 +198,6 @@ if __name__ == '__main__' :
     dir_analyzed_base = check_dir(pinfo.dir_analyzed, debug)  # create base processed director
     dir_analyzed = check_dir ( '%s/%s' % (pinfo.dir_analyzed, pinfo.pipeline_id),debug)
     dir_final = check_dir ('%s/final' % (dir_analyzed,),debug)
-    # if data3 != '1':
-		# pinfo.dir_processed = pinfo.dir_processed + '_' + add_suffix1
     if processing == '0':
 		pinfo.dir_processed = pinfo.dir_dcm_base + '/data/raw'
     dir_processed = check_dir ( '%s/%s' % (pinfo.dir_processed, pinfo.pipeline_id),debug)
@@ -561,7 +562,7 @@ if __name__ == '__main__' :
                 sys_cmd = 'gzip %s/%s%s' % (dir_analyzed_subj, fname_glm_err, pinfo.file_type)
                 check_and_run(sys_cmd, dir_analyzed_subj, fname_glm_err, pinfo.file_type + '.gz', debug)
 			
-fileName = 'REDCap_import_files/all/'+ subj + '_' + stimulus_suffix + '_analyzed_parameters.txt'				
+fileName = 'REDCap_import_files/all/'+ subj + '_' + breathhold_selection + '_' + stimulus_suffix + '_analyzed_parameters.txt'				
 with open(fileName,'w') as thefile:
 	thefile.write('dir_dcm_base,' + pinfo.dir_dcm_base + ',Base Directory\n')
 	thefile.write('dir_analyzed,' + pinfo.dir_analyzed + ',Analyzed Directory\n')

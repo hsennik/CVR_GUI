@@ -130,18 +130,10 @@ end
 if strcmp(boxcar_name,'Standard Boxcar') == 1
     type = 'standard_boxcar';
 elseif strcmp(boxcar_name,'Customized Boxcar') == 1
-    type = 'customized_boxcar';
-elseif strcmp(boxcar_name,'Shifted Boxcar') ==1 
-    type = 'shifted_boxcar';
-elseif strcmp(boxcar_name,'Sawtooth') == 1
-    type = 'sawtooth';
-elseif strcmp(boxcar_name, 'Cerebellum') == 1
-    type = 'pf';
-end
+    type = customized_boxcar;
 
 if strcmp(figname,'Entire Brain Timeseries') == 1
-    mkdir([directories.subject '/clinician_final/' subj.breathhold], type);
-    saveas(ts.f,[directories.subject '/clinician_final/' subj.breathhold '/' type '/' subj.name '_' subj.breathhold '_' boxcar_name '.jpg']);
+    saveas(ts.f,[directories.subject '/clinician_final/' subj.breathhold '/' subj.name '_' subj.breathhold '_' boxcar_name '.jpg']);
 end
 
 end

@@ -13,6 +13,8 @@ function drawROI(source,callbackdata,anat,directories,subj,mp,stim)
 
 global ax_slider_value;
 
+close(findobj('type','figure','name','ROI Timeseries'));
+
 addpath('/data/wayne/matlab/NIFTI'); % add path to nii functions
 addpath('/data/wayne/matlab/general');
 
@@ -27,7 +29,7 @@ A = fscanf(fileID,format);
 if A == 1
     tag = 'processed';
 else
-    tag = 'processed_not';
+    tag = 'raw';
 end
 
 fclose(fileID);

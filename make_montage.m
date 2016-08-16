@@ -1,4 +1,4 @@
-function make_montage(source,callbackdata,anat,funct,mp,type,subj,directories,montage_info)
+function make_montage(source,callbackdata,anat,funct,mp,type,subj,directories,montage_info,stim)
 % Function to make montage from saved axial slice images 
 % 
 % INPUTS 
@@ -37,15 +37,17 @@ montage_window.f = figure('Name', 'Montage',...
                         'Visible','on',...
                         'numbertitle','off');
                     
-set(mp.f, 'MenuBar', 'none'); % remove the menu bar 
-set(mp.f, 'ToolBar', 'none'); % remove the tool bar                     
+% set(montage_window.f, 'MenuBar', 'none'); % remove the menu bar 
+% set(montage_window.f, 'ToolBar', 'none'); % remove the tool bar                     
 
 %  Create 5 by 5 montage
 mymontage = montage(fileNames, 'Size', [5 5]);
 
 %  Create directory for clinician to view final montage
 directories.cliniciandir = 'clinician_final';
-mkdir(directories.subject,['/' directories.cliniciandir '/']);
+mkdir(directories.subject,directories.cliniciandir);
+mkdir([directories.subject '/' directories.cliniciandir], subj.breathhold);
+mkdir([directories.subject '/' directories.cliniciandir '/' subj.breathhold], type);
 
 mask_name = handles.predetermined_ROI.String(handles.predetermined_ROI.Value);
 
@@ -72,19 +74,23 @@ else
 end
 
 %  Write the montage to the clinician file
-imwrite(mymontage.CData,[directories.subject '/' directories.cliniciandir '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '_' mask_name separated '_montage.jpg']); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
+imwrite(mymontage.CData,[directories.subject '/' directories.cliniciandir '/' subj.breathhold '/' type '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '_' mask_name separated '_montage.jpg']); % the file name includes subject name, breathhold, processing, boxcar type, and tstat value 
+
+% copyfile(stim,[directories.subject '/' directories.cliniciandir '/' subj.breathhold '/' type '/' subj.name '_' subj.breathhold '_' type '_' mp.t_number.String '_' mask_name separated '_stimfile.1D'],'f');
 
 %  Display the montage in the montage window
 display('Montage saved');
 
+h = msgbox('Montage has been saved in the clinician folder');
+
 %  If clinician generates a montage, move the parameter data used for that
 %  montage to a the final REDCap folder
 mkdir([directories.subject, '/' directories.REDCapdir '/final']);
-if strcmp(mp.menu(2).String(mp.menu(2).Value),'yes') == 1 % user selected processed data on main GUI
-    copyfile([directories.subject '/' directories.REDCapdir '/all/' subj.name '_processed_parameters.txt'],[directories.subject '/' directories.REDCapdir '/final/' subj.name '_processed_parameters.txt'],'f');
+if strcmp(mp.menu(2).String(mp.menu(2).Value),'raw') == 1 % user selected processed data on main GUI
+    copyfile([directories.REDCapdir '/all/' subj.name '_not_processed_parameters.txt'],[directories.REDCapdir '/final/' subj.name '_not_processed_parameters.txt'],'f');
 else % raw data 
-    copyfile([directories.REDCapdir '/all/' subj.name '_not_processed_parameters.txt'],[directories.REDCapdir '/final/'],'f');
+    copyfile([directories.REDCapdir '/all/' subj.name '_processed_parameters.txt'],[directories.REDCapdir '/final/' subj.name '_processed_parameters.txt'],'f');
 end
-copyfile([directories.subject '/' directories.REDCapdir '/all/' subj.name '_' montage_info '_analyzed_parameters.txt'],[directories.subject '/' directories.REDCapdir '/final/' subj.name '_' montage_info '_analyzed_parameters.txt'],'f');
+copyfile([directories.subject '/' directories.REDCapdir '/all/' subj.name '_' subj.breathhold '_' montage_info '_analyzed_parameters.txt'],[directories.subject '/' directories.REDCapdir '/final/' subj.name '_' subj.breathhold '_' montage_info '_analyzed_parameters.txt'],'f');
 
 end
